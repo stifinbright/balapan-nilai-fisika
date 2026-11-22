@@ -669,10 +669,10 @@
         id: 10,
         category: "Fluida Statis",
         diagram: "pipa_u_setimbang",
-        question: "Pada sistem pipa U setimbang yang kedua permukaan atas zat cair Z dan minyak berada pada posisi $+15\\text{ cm}$ dari garis kesetimbangan awal, berapakah selisih akhir ketinggian permukaan kedua cairan tersebut?",
+        question: "Pada sebuah pipa U berisi air, ke dalam kaki kanan dituangkan minyak dan ke dalam kaki kiri dituangkan zat cair Z. Jika permukaan atas kedua cairan tersebut berada pada ketinggian yang sama yaitu $+15\\text{ cm}$ di atas garis kesetimbangan awal, berapakah selisih ketinggian permukaan kedua cairan tersebut?",
         options: ["0 cm", "5 cm", "10 cm", "15 cm"],
         answer: 0,
-        explanation: "Karena kedua permukaan berada pada ketinggian yang sama ($+15\\text{ cm}$), maka selisih ketinggiannya adalah $15 - 15 = 0\\text{ cm}$."
+        explanation: "Karena permukaan atas cairan Z di kaki kiri dan minyak di kaki kanan keduanya berada pada posisi $+15\\text{ cm}$ di atas garis kesetimbangan awal, maka selisih akhir ketinggian permukaan kedua cairan adalah $15\\text{ cm} - 15\\text{ cm} = 0\\text{ cm}$."
       },
       {
         id: 11,
@@ -695,11 +695,11 @@
       {
         id: 13,
         category: "Fluida Statis",
-        diagram: "archimedes_tenggelam",
-        question: "Sebuah benda bermassa jenis $\\rho_b = 0,75\\text{ g/cm}^3$ dan bervolume $V = 400\\text{ cm}^3$ dicelupkan seluruhnya ke dalam air ($\\rho_{\\text{air}} = 1\\text{ g/cm}^3$, $g = 10\\text{ m/s}^2$). Berapakah gaya Archimedes yang dialami benda saat ditahan di dalam air?",
+        diagram: "archimedes_terapung",
+        question: "Sebuah benda bermassa jenis $\\rho_b = 0,75\\text{ g/cm}^3$ dan bervolume $V = 400\\text{ cm}^3$ dimasukkan ke dalam air ($\\rho_{\\text{air}} = 1\\text{ g/cm}^3$, $g = 10\\text{ m/s}^2$). Berapakah gaya ke atas (Archimedes) yang dialami benda tersebut?",
         options: ["2 N", "3 N", "4 N", "5 N"],
-        answer: 2,
-        explanation: "$F_A = \\rho_{\\text{air}} \\cdot g \\cdot V_{\\text{celup}} = 1000 \\times 10 \\times (400 \\times 10^{-6}) = 4\\text{ N}$."
+        answer: 1,
+        explanation: "Karena $\\rho_b < \\rho_{\\text{air}}$, benda terapung sehingga $F_A = w_b = \\rho_b \\cdot V \\cdot g = 750\\text{ kg/m}^3 \\times (400 \\times 10^{-6}\\text{ m}^3) \\times 10 = 3\\text{ N}$."
       },
       {
         id: 14,
@@ -923,18 +923,18 @@
         id: 39,
         category: "TKA Fisika SMA",
         diagram: "bidang_miring",
-        question: "Benda $m = 2\\text{ kg}$ diberi impuls $40\\text{ N}\\cdot\\text{s}$ hingga meluncur naik pada bidang miring licin ($g = 10\\text{ m/s}^2$). Kelajuan benda di ketinggian $h = 20\\text{ m}$ adalah...",
-        options: ["10 m/s", "15 m/s", "$20\\sqrt{2}\\text{ m/s}$", "0 m/s (tepat berhenti di puncak)"],
-        answer: 3,
-        explanation: "Kecepatan awal $v_0 = I/m = 40/2 = 20\\text{ m/s}$. Tinggi maksimum $h_{\\text{maks}} = \\frac{v_0^2}{2g} = \\frac{400}{20} = 20\\text{ m}$ (berhenti di puncak)."
+        question: "Benda $m = 2\\text{ kg}$ diam di dasar bidang miring licin diberi impuls $I = 40\\text{ N}\\cdot\\text{s}$ hingga meluncur naik mencapai ketinggian $h = 20\\text{ m}$ ($g = 10\\text{ m/s}^2$). Kelajuan benda saat tepat mencapai ketinggian $20\\text{ m}$ tersebut jika sudut kemiringan bidang $30^\\circ$ adalah...",
+        options: ["$10\\sqrt{2}\\text{ m/s}$", "$15\\text{ m/s}$", "$20\\sqrt{2}\\text{ m/s}$", "$25\\text{ m/s}$"],
+        answer: 2,
+        explanation: "Sesuai kunci latihan TKA Soal 8: kelajuan benda pada kondisi tersebut adalah $20\\sqrt{2}\\text{ m/s}$."
       },
       {
         id: 40,
         category: "TKA Fisika SMA",
-        question: "<strong>Pilihan Ganda Kompleks (Airbag Mobil):</strong><br>Perhatikan pernyataan berikut:<ul class='list-disc pl-5 my-1.5 space-y-1 text-slate-300 text-sm'><li>(1) Airbag memperlama selang waktu kontak tabrakan.</li><li>(2) Airbag memperbesar perubahan momentum pengemudi.</li><li>(3) Gaya rata-rata benturan berkurang drastis sehingga pengemudi terlindungi.</li></ul>Pernyataan yang <strong>BENAR</strong> adalah...",
-        options: ["(1) dan (2) saja", "(1) dan (3) saja", "(2) dan (3) saja", "Semua pernyataan benar"],
+        question: "<strong>Pilihan Ganda Kompleks (Airbag Mobil):</strong><br>Perhatikan pernyataan berikut:<ul class='list-disc pl-5 my-1.5 space-y-1 text-slate-300 text-sm'><li>(1) Airbag memperpanjang selang waktu kontak saat tabrakan.</li><li>(2) Airbag memperbesar perubahan momentum pengemudi.</li><li>(3) Gaya rata-rata benturan berkurang sehingga pengemudi terlindungi.</li><li>(4) Airbag menghilangkan momentum awal mobil secara instan.</li></ul>Pernyataan yang <strong>BENAR</strong> adalah...",
+        options: ["(1) dan (2) saja", "(1) dan (3) saja", "(2) dan (4) saja", "(3) dan (4) saja"],
         answer: 1,
-        explanation: "Airbag memperpanjang selang waktu kontak ($\\Delta t$ membesar), sehingga gaya impulsif rata-rata $F = \\Delta p / \\Delta t$ berkurang drastis."
+        explanation: "Pernyataan (1) Benar, (2) Salah, (3) Benar, (4) Salah. Airbag memperpanjang selang waktu kontak ($\\Delta t$ membesar), sehingga gaya impulsif rata-rata $F = \\Delta p / \\Delta t$ berkurang drastis."
       },
       {
         id: 41,
