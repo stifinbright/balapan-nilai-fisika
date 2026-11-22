@@ -1,0 +1,1774 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALTAR ILMU - Gamifikasi Fisika 11</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- MathJax for formatted physics formulas -->
+    <script>
+      MathJax = {
+        tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
+        svg: { fontCache: 'global' }
+      };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <!-- Firebase SDK Modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration fallback or environmental inject
+        const firebaseConfig = typeof __firebase_config !== 'undefined' 
+            ? JSON.parse(__firebase_config) 
+            : {
+                apiKey: "demo-key",
+                authDomain: "demo.firebaseapp.com",
+                projectId: "demo-project",
+                storageBucket: "demo.appspot.com",
+                messagingSenderId: "123456789",
+                appId: "1:123456789:web:demo"
+              };
+
+        window.appId = typeof __app_id !== 'undefined' ? __app_id : 'altar-fisika-11';
+        
+        try {
+            window.firebaseApp = initializeApp(firebaseConfig);
+            window.db = getFirestore(window.firebaseApp);
+            window.auth = getAuth(window.firebaseApp);
+            
+            // Authenticate
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                signInWithCustomToken(window.auth, __initial_auth_token).catch(() => signInAnonymously(window.auth));
+            } else {
+                signInAnonymously(window.auth).catch(err => console.log("Offline mode active"));
+            }
+        } catch(e) {
+            console.log("Firebase setup fallback to local channel state");
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .font-fantasy {
+            font-family: 'Cinzel', serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        /* Glow animation effects */
+        .altar-glow {
+            box-shadow: 0 0 25px rgba(245, 158, 11, 0.4), inset 0 0 15px rgba(245, 158, 11, 0.2);
+        }
+        .correct-glow {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.6);
+        }
+        .wrong-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-2px, 0, 0); }
+            20%, 80% { transform: translate3d(4px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-6px, 0, 0); }
+            40%, 60% { transform: translate3d(6px, 0, 0); }
+        }
+        /* Timer bar smooth animation */
+        .timer-bar {
+            transition: width 1s linear, background-color 0.5s ease;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-amber-500 selection:text-black">
+
+    <!-- TOP GLOBAL NAVBAR / QUICK ROLE SWITCHER (UNIFIED FOR PREVIEW & LIVE USE) -->
+    <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-50 px-4 py-2 flex flex-wrap items-center justify-between shadow-md">
+        <div class="flex items-center gap-3">
+            <span class="text-xl">🏛️</span>
+            <span class="font-fantasy font-extrabold text-amber-400 text-lg tracking-wider">ALTAR ILMU</span>
+            <span class="text-xs bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-0.5 rounded-full font-semibold hidden sm:inline-block">Fisika Kelas 11</span>
+        </div>
+
+        <!-- Mode Switcher Tabs -->
+        <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs sm:text-sm">
+            <button onclick="switchView('landing')" id="tab-landing" class="px-3 py-1.5 rounded-lg font-medium transition text-amber-400 bg-slate-800 shadow">
+                <i class="fa-solid fa-[#000] fa-house mr-1"></i> Beranda
+            </button>
+            <button onclick="switchView('student-game')" id="tab-student" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+                <i class="fa-solid fa-gamepad mr-1 text-emerald-400"></i> Mode Siswa
+            </button>
+            <button onclick="switchView('teacher')" id="tab-teacher" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+                <i class="fa-solid fa-chalkboard-user mr-1 text-indigo-400"></i> Proyektor Guru
+            </button>
+            <button onclick="switchView('bank')" id="tab-bank" class="px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+                <i class="fa-solid fa-book-bookmark mr-1 text-amber-400"></i> Bank Soal (41)
+            </button>
+        </div>
+
+        <!-- Audio Mute & Room Code Indicator -->
+        <div class="flex items-center gap-3">
+            <button id="btn-audio" onclick="toggleAudio()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 flex items-center justify-center text-slate-300 transition" title="Suara Kuis">
+                <i class="fa-solid fa-volume-high text-amber-400"></i>
+            </button>
+            <div id="room-code-badge" class="bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-mono font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span id="display-room-code">RUANGAN: FISIKA11</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6">
+
+        <!-- ========================================== -->
+        <!-- 1. LANDING & ROLE SELECTION SCREEN        -->
+        <!-- ========================================== -->
+        <section id="view-landing" class="space-y-8 py-4">
+            <!-- Hero Banner -->
+            <div class="text-center space-y-4 max-w-3xl mx-auto pt-4">
+                <div class="inline-flex items-center gap-2 bg-gradient-to-r from-amber-500/20 via-orange-500/10 to-transparent border border-amber-500/30 px-4 py-1.5 rounded-full text-amber-400 text-sm font-semibold">
+                    <i class="fa-solid fa-shield-halved"></i> Modul Kompetisi Interaktif Fisika SMA
+                </div>
+                <h1 class="text-3xl sm:text-5xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 drop-shadow">
+                    ALTAR ILMU: FISIKA 11
+                </h1>
+                <p class="text-slate-400 text-sm sm:text-base leading-relaxed">
+                    Jawab 10 soal fisika dengan benar untuk menggerakkan Hero milikmu menuju Altar Ilmu. Bertanding secara real-time bersama 40 teman sekelas!
+                </p>
+
+                <!-- INSTANT QUICK-TEST BUTTON FOR IMMEDIATE STUDENT HUD EVALUATION -->
+                <div class="pt-2">
+                    <button onclick="startInstantStudentDemo()" class="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-extrabold text-base rounded-2xl shadow-lg shadow-emerald-950/50 hover:scale-105 active:scale-95 transition flex items-center justify-center gap-3 mx-auto border border-emerald-300/30">
+                        <i class="fa-solid fa-bolt text-xl animate-bounce"></i>
+                        <span>⚡ UJI COBA SISWA LANGSUNG (MAIN SEKARANG)</span>
+                    </button>
+                    <p class="text-xs text-slate-500 mt-2">Langsung masuk ke layar kuis siswa tanpa perlu setup room dulu!</p>
+                </div>
+            </div>
+
+            <!-- 3 Main Portal Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+
+                <!-- CARD A: MODE SISWA -->
+                <div class="bg-slate-900/90 border border-slate-800 hover:border-emerald-500/50 rounded-3xl p-6 flex flex-col justify-between shadow-xl transition-all duration-300 group hover:-translate-y-1">
+                    <div class="space-y-4">
+                        <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-user-ninja"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-100 font-fantasy">Mode Siswa</h3>
+                            <p class="text-xs text-slate-400 mt-1">Gabung sesi kelas, pilih karakter hero, dan pacu kecepatan menjawab soal fisika.</p>
+                        </div>
+
+                        <!-- Quick Join Form -->
+                        <div class="space-y-3 pt-2">
+                            <div>
+                                <label class="text-xs font-semibold text-slate-400 block mb-1">Nama Siswa</label>
+                                <input type="text" id="input-student-name" value="Budi Santoso" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-400 block mb-1">No. Absen (1-40)</label>
+                                    <input type="number" id="input-student-absen" value="07" min="1" max="40" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="text-xs font-semibold text-slate-400 block mb-1">Kode Ruangan</label>
+                                    <input type="text" id="input-student-room" value="FISIKA11" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white uppercase focus:outline-none focus:border-emerald-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="text-xs font-semibold text-slate-400 block mb-1">Pilih Hero Avatar</label>
+                                <div class="grid grid-cols-4 gap-2" id="hero-selection-box">
+                                    <button type="button" onclick="selectHero('Knight', '🛡️')" class="hero-btn active border-2 border-emerald-500 bg-emerald-950/40 p-2 rounded-xl text-center">
+                                        <div class="text-xl">🛡️</div>
+                                        <div class="text-[10px] font-bold text-emerald-400 mt-0.5">Knight</div>
+                                    </button>
+                                    <button type="button" onclick="selectHero('Mage', '🔮')" class="hero-btn border border-slate-800 bg-slate-950 p-2 rounded-xl text-center hover:border-slate-700">
+                                        <div class="text-xl">🔮</div>
+                                        <div class="text-[10px] font-bold text-slate-400 mt-0.5">Mage</div>
+                                    </button>
+                                    <button type="button" onclick="selectHero('Archer', '🏹')" class="hero-btn border border-slate-800 bg-slate-950 p-2 rounded-xl text-center hover:border-slate-700">
+                                        <div class="text-xl">🏹</div>
+                                        <div class="text-[10px] font-bold text-slate-400 mt-0.5">Archer</div>
+                                    </button>
+                                    <button type="button" onclick="selectHero('Paladin', '⚔️')" class="hero-btn border border-slate-800 bg-slate-950 p-2 rounded-xl text-center hover:border-slate-700">
+                                        <div class="text-xl">⚔️</div>
+                                        <div class="text-[10px] font-bold text-slate-400 mt-0.5">Paladin</div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="joinAsStudent()" class="w-full mt-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-950/50 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-right-to-bracket"></i> Masuk Ruang Tunggu
+                    </button>
+                </div>
+
+                <!-- CARD B: MODE GURU / PROYEKTOR -->
+                <div class="bg-slate-900/90 border border-slate-800 hover:border-indigo-500/50 rounded-3xl p-6 flex flex-col justify-between shadow-xl transition-all duration-300 group hover:-translate-y-1">
+                    <div class="space-y-4">
+                        <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-display"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-100 font-fantasy">Mode Guru (Proyektor)</h3>
+                            <p class="text-xs text-slate-400 mt-1">Tampilkan Arena 2D di depan kelas, pantau posisi 40 siswa real-time, dan atur kompetisi.</p>
+                        </div>
+
+                        <div class="space-y-3 text-xs text-slate-300 bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80">
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400"><i class="fa-solid fa-users text-indigo-400 mr-1.5"></i> Kapasitas Maksimal:</span>
+                                <span class="font-bold text-indigo-300">40 Siswa / Sesi</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400"><i class="fa-solid fa-eye-slash text-indigo-400 mr-1.5"></i> Pembahasan Live:</span>
+                                <span class="font-bold text-amber-400" id="landing-anti-leak-state">NONAKTIF (Anti-Contek)</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-slate-400"><i class="fa-solid fa-[#000] fa-robot text-indigo-400 mr-1.5"></i> Simulasi Bot Bot:</span>
+                                <span class="font-bold text-emerald-400">Siap (+15 Siswa Instant)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="switchView('teacher')" class="w-full mt-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-950/50 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-[#000] fa-chalkboard-user"></i> Buka Layar Proyektor Guru
+                    </button>
+                </div>
+
+                <!-- CARD C: BANK SOAL -->
+                <div class="bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 rounded-3xl p-6 flex flex-col justify-between shadow-xl transition-all duration-300 group hover:-translate-y-1">
+                    <div class="space-y-4">
+                        <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-2xl group-hover:scale-110 transition">
+                            <i class="fa-solid fa-boxes-stacked"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-xl font-bold text-slate-100 font-fantasy">Bank Soal Fisika 11</h3>
+                            <p class="text-xs text-slate-400 mt-1">Akses 41 soal fisika lengkap dengan pembahasan rumus detail (Fluida, Impuls & TKA).</p>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 text-[11px]">
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                                <div class="font-bold text-amber-400">Fluida Dinamis</div>
+                                <div class="text-slate-500 text-[10px]">6 Soal (Bernoulli & Venturi)</div>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                                <div class="font-bold text-amber-400">Fluida Statis</div>
+                                <div class="text-slate-500 text-[10px]">10 Soal (Hidrostatis & U)</div>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                                <div class="font-bold text-amber-400">Impuls Momentum</div>
+                                <div class="text-slate-500 text-[10px]">15 Soal (Tumbukan & I)</div>
+                            </div>
+                            <div class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-slate-300">
+                                <div class="font-bold text-amber-400">TKA Fisika SMA</div>
+                                <div class="text-slate-500 text-[10px]">10 Soal Kompleks</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="switchView('bank')" class="w-full mt-5 py-3 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-950/50 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-list-check"></i> Pelajari & Kelola Bank Soal
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 2. STUDENT VIEW (GAME HUD & LOBBY)        -->
+        <!-- ========================================== -->
+        <section id="view-student-game" class="hidden space-y-4 py-2">
+            
+            <!-- A. STUDENT WAITING ROOM LOBBY -->
+            <div id="student-lobby-box" class="bg-slate-900 border border-slate-800 rounded-3xl p-6 text-center space-y-6 max-w-2xl mx-auto shadow-2xl">
+                <div class="w-20 h-20 bg-emerald-500/10 border-2 border-emerald-500/40 rounded-full flex items-center justify-center text-4xl mx-auto text-emerald-400 animate-pulse">
+                    <span id="lobby-hero-icon">🛡️</span>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold font-fantasy text-emerald-400" id="lobby-student-name">Budi Santoso</h2>
+                    <p class="text-xs text-slate-400 mt-1">Nomor Absen: <span id="lobby-student-absen" class="font-bold text-amber-400">07</span> | Hero: <span id="lobby-hero-title" class="font-bold text-slate-200">Knight</span></p>
+                </div>
+
+                <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                    <div class="text-xs text-slate-400 font-semibold flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-spinner fa-spin text-amber-400"></i>
+                        <span>STATUS: MENUNGGU GURU MEMULAI PERTANDINGAN...</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Begitu guru menekan tombol "Mulai", soal pertama akan langsung tampil secara otomatis.</p>
+                </div>
+
+                <!-- Live Student Roster Count -->
+                <div class="text-left bg-slate-950/50 p-4 rounded-2xl border border-slate-800/80">
+                    <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+                        <span><i class="fa-solid fa-users text-emerald-400 mr-1"></i> Peserta Terhubung di Kelas:</span>
+                        <span class="font-bold text-emerald-400" id="lobby-count-text">1 / 40 Siswa</span>
+                    </div>
+                    <div id="lobby-roster-list" class="flex flex-wrap gap-2 max-h-36 overflow-y-auto pt-1">
+                        <!-- Student pills inserted dynamically -->
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <button onclick="switchView('landing')" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs">
+                        <i class="fa-solid fa-arrow-left mr-1"></i> Keluar / Ganti Hero
+                    </button>
+                    <button onclick="forceStartMatchFromStudent()" class="flex-1 py-2.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-extrabold rounded-xl text-xs">
+                        <i class="fa-solid fa-play mr-1"></i> Mulai Mandiri Sekarang
+                    </button>
+                </div>
+            </div>
+
+            <!-- B. ACTIVE QUIZ HUD -->
+            <div id="student-quiz-hud" class="hidden space-y-4 max-w-4xl mx-auto">
+                
+                <!-- Student Header Stats Bar -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-xl bg-slate-800 border border-amber-500/30 flex items-center justify-center text-2xl shadow">
+                            <span id="hud-hero-icon">🛡️</span>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="font-bold text-slate-100 text-base" id="hud-student-name">Budi Santoso</h3>
+                                <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">Absen <span id="hud-student-absen">07</span></span>
+                            </div>
+                            <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                <span>Peringkat: <strong class="text-emerald-400 font-mono" id="hud-student-rank">#1</strong></span>
+                                <span>•</span>
+                                <span>Total Poin: <strong class="text-amber-400 font-mono" id="hud-student-score">0 Poin</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Crystals (10 Correct Target) -->
+                    <div class="flex-1 max-w-xs space-y-1">
+                        <div class="flex items-center justify-between text-xs">
+                            <span class="text-slate-400 font-semibold"><i class="fa-solid fa-gem text-amber-400 mr-1"></i> Menuju Altar Ilmu:</span>
+                            <span class="font-bold text-emerald-400 font-mono" id="hud-progress-text">0 / 10 Benar</span>
+                        </div>
+                        <div class="grid grid-cols-10 gap-1" id="hud-crystal-bar">
+                            <!-- 10 Crystal Boxes generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3-Minute Question Timer Bar -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 space-y-1.5 shadow">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400 font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-clock text-amber-400"></i> Sisa Waktu Soal Ini
+                        </span>
+                        <span class="font-mono font-bold text-base text-emerald-400" id="hud-timer-text">03:00</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                        <div id="hud-timer-bar" class="timer-bar h-full bg-emerald-500 w-full rounded-full"></div>
+                    </div>
+                </div>
+
+                <!-- Main Question Card -->
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-7 space-y-6 shadow-2xl relative overflow-hidden" id="quiz-card-box">
+                    
+                    <!-- Topic Pill & Question Index -->
+                    <div class="flex items-center justify-between">
+                        <span class="bg-indigo-500/10 border border-indigo-500/30 text-indigo-300 text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5" id="hud-topic-pill">
+                            <i class="fa-solid fa-atom"></i> Fluida Dinamis
+                        </span>
+                        <span class="text-xs text-slate-500 font-mono">Soal Acak #<span id="hud-question-number">1</span></span>
+                    </div>
+
+                    <!-- Question Body Text & Equations -->
+                    <div class="text-slate-100 text-base sm:text-lg font-medium leading-relaxed" id="hud-question-text">
+                        Loading soal fisika...
+                    </div>
+
+                    <!-- 4 Multiple Choice Option Buttons -->
+                    <div class="grid grid-cols-1 gap-3 pt-2" id="hud-options-container">
+                        <!-- Generated by JS -->
+                    </div>
+
+                    <!-- Keyboard Shortcut Legend -->
+                    <div class="text-center text-[11px] text-slate-500 pt-2 border-t border-slate-800/60">
+                        <i class="fa-solid fa-keyboard mr-1"></i> Gunakan mouse/sentuh HP, atau tekan angka <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-300 font-mono">1-4</kbd> / <kbd class="px-1.5 py-0.5 bg-slate-800 rounded border border-slate-700 text-slate-300 font-mono">A-D</kbd> pada keyboard.
+                    </div>
+                </div>
+
+                <!-- INSTANT FEEDBACK OVERLAY (MODAL/CARD INSET) -->
+                <div id="hud-feedback-modal" class="hidden bg-slate-900/95 border-2 border-slate-700 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur">
+                    <div id="feedback-icon-box" class="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto">
+                        💥
+                    </div>
+                    <div>
+                        <h3 class="text-2xl font-black font-fantasy" id="feedback-title">SERANGAN KRITIS!</h3>
+                        <p class="text-xs text-slate-300 mt-1" id="feedback-score-diff">+3 Poin didapatkan!</p>
+                    </div>
+
+                    <!-- Explanation Container (respects teacher anti-leak toggle) -->
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-left text-xs space-y-2 max-h-48 overflow-y-auto">
+                        <div class="font-bold text-amber-400 flex items-center gap-1">
+                            <i class="fa-solid fa-lightbulb"></i> Pembahasan Rumus Fisika:
+                        </div>
+                        <div class="text-slate-300 font-mono leading-relaxed" id="feedback-explanation">
+                            <!-- Formulas loaded here -->
+                        </div>
+                    </div>
+
+                    <button onclick="nextQuestion()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-sm rounded-xl shadow-lg transition">
+                        Lanjut ke Soal Berikutnya <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- C. VICTORY / ALTAR REACHED SCREEN -->
+            <div id="student-victory-box" class="hidden bg-slate-900 border-2 border-amber-500/50 rounded-3xl p-6 sm:p-8 text-center space-y-6 max-w-2xl mx-auto shadow-2xl altar-glow">
+                <div class="w-24 h-24 bg-gradient-to-tr from-amber-500 to-yellow-300 rounded-3xl flex items-center justify-center text-5xl mx-auto shadow-xl text-slate-950 animate-bounce">
+                    🏆
+                </div>
+                
+                <div class="space-y-2">
+                    <span class="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">
+                        MISI SELESAI
+                    </span>
+                    <h2 class="text-3xl sm:text-4xl font-black font-fantasy text-amber-400">ALTAR ILMU DIKUASAI!</h2>
+                    <p class="text-xs text-slate-300">Selamat! Karakter Hero milikmu berhasil mencapai puncak Altar Ilmu Fisika 11!</p>
+                </div>
+
+                <!-- Final Stats Grid -->
+                <div class="grid grid-cols-3 gap-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center">
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase">Skor Akhir</div>
+                        <div class="text-xl font-black text-amber-400 font-mono" id="victory-score">27 Poin</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase">Peringkat</div>
+                        <div class="text-xl font-black text-emerald-400 font-mono" id="victory-rank">#1</div>
+                    </div>
+                    <div>
+                        <div class="text-[10px] text-slate-400 font-bold uppercase">Total Salah</div>
+                        <div class="text-xl font-black text-rose-400 font-mono" id="victory-wrong">2x</div>
+                    </div>
+                </div>
+
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="switchView('bank')" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700">
+                        <i class="fa-solid fa-book-open mr-1.5"></i> Review Pembahasan 41 Soal
+                    </button>
+                    <button onclick="resetCurrentStudentGame()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg">
+                        <i class="fa-solid fa-rotate-right mr-1.5"></i> Main Lagi / Ulangi Misi
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 3. TEACHER PROJECTOR VIEW & ARENA CANVAS   -->
+        <!-- ========================================== -->
+        <section id="view-teacher" class="hidden space-y-6 py-2">
+            
+            <!-- Control Header & Live Action Buttons -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-6 space-y-4 shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl sm:text-2xl font-black font-fantasy text-indigo-400 flex items-center gap-2">
+                            <i class="fa-solid fa-display"></i> PROYEKTOR KELAS & ARENA 2D
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Ruangan: <strong class="text-amber-400 font-mono">FISIKA11</strong> | Terhubung: <span id="teacher-online-count" class="font-bold text-emerald-400">1 Siswa</span></p>
+                    </div>
+
+                    <!-- Action Controls -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <button onclick="addBotSimulations(15)" class="px-3.5 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs rounded-xl shadow transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-[#000] fa-user-plus"></i> +15 Simulasi Siswa (Bot)
+                        </button>
+                        <button onclick="toggleTeacherAntiLeak()" id="btn-anti-leak" class="px-3.5 py-2 bg-amber-500/10 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-eye-slash"></i> Pembahasan Live: NONAKTIF
+                        </button>
+                        <button onclick="resetMatchSession()" class="px-3.5 py-2 bg-rose-600/20 border border-rose-500/40 text-rose-300 hover:bg-rose-600 hover:text-white font-bold text-xs rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-rotate-left"></i> Reset Sesi
+                        </button>
+                        <button onclick="exportResultsCSV()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl border border-slate-700 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-file-csv text-emerald-400"></i> Unduh Rekap CSV
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Topic Filter Bar -->
+                <div class="flex items-center gap-2 overflow-x-auto pt-2 border-t border-slate-800 text-xs">
+                    <span class="text-slate-400 font-bold whitespace-nowrap"><i class="fa-solid fa-filter mr-1"></i> Filter Topik:</span>
+                    <button onclick="filterTeacherTopic('ALL')" id="filter-topic-ALL" class="topic-filter-btn px-3 py-1 rounded-lg font-semibold bg-indigo-600 text-white">Semua Topik (41)</button>
+                    <button onclick="filterTeacherTopic('Fluida Dinamis')" id="filter-topic-Fluida Dinamis" class="topic-filter-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white">Fluida Dinamis (6)</button>
+                    <button onclick="filterTeacherTopic('Fluida Statis')" id="filter-topic-Fluida Statis" class="topic-filter-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white">Fluida Statis (10)</button>
+                    <button onclick="filterTeacherTopic('Impuls dan Momentum')" id="filter-topic-Impuls dan Momentum" class="topic-filter-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white">Impuls & Momentum (15)</button>
+                    <button onclick="filterTeacherTopic('TKA Fisika SMA')" id="filter-topic-TKA Fisika SMA" class="topic-filter-btn px-3 py-1 rounded-lg font-semibold bg-slate-800 text-slate-400 hover:text-white">TKA Fisika (10)</button>
+                </div>
+            </div>
+
+            <!-- HTML5 2D ANIMATED ARENA CANVAS -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-4 shadow-2xl space-y-2 relative overflow-hidden">
+                <div class="flex items-center justify-between text-xs px-2">
+                    <span class="font-bold text-slate-300 flex items-center gap-1.5">
+                        <i class="fa-solid fa-person-running text-emerald-400"></i> ARENA LOMBA MENUJU ALTAR ILMU (0/10 -> 10/10)
+                    </span>
+                    <span class="text-slate-500 text-[11px]">Gerakan Karakter Diperbarui Real-time</span>
+                </div>
+                <div class="w-full h-80 sm:h-96 rounded-2xl bg-slate-950 border border-slate-800 relative overflow-hidden">
+                    <canvas id="arena-canvas" class="w-full h-full block"></canvas>
+                </div>
+            </div>
+
+            <!-- LIVE CLASSROOM LEADERBOARD TABLE -->
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-5 shadow-xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-bold font-fantasy text-lg text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-400"></i> KLASEMEN SEMENTARA (MAKS. 40 SISWA)
+                    </h3>
+                    <span class="text-xs text-slate-400">Diurutkan Berdasarkan: Selesai > Poin > Waktu</span>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs">
+                        <thead>
+                            <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase">
+                                <th class="p-3">Rank</th>
+                                <th class="p-3">Absen</th>
+                                <th class="p-3">Siswa & Hero</th>
+                                <th class="p-3">Kemajuan Altar</th>
+                                <th class="p-3">Salah</th>
+                                <th class="p-3">Total Poin</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="teacher-leaderboard-tbody" class="divide-y divide-slate-800/60 font-medium">
+                            <!-- Rows injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ========================================== -->
+        <!-- 4. QUESTION BANK SCREEN (41 QUESTIONS)     -->
+        <!-- ========================================== -->
+        <section id="view-bank" class="hidden space-y-6 py-2">
+            <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                <div class="flex flex-wrap items-center justify-between gap-4">
+                    <div>
+                        <h2 class="text-2xl font-black font-fantasy text-amber-400 flex items-center gap-2">
+                            <i class="fa-solid fa-book-bookmark"></i> BANK SOAL & KUNCI JAWABAN FISIKA 11
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Total 41 Soal Fisika Sesuai Silabus (Fluida Dinamis, Fluida Statis, Impuls & Momentum, TKA Fisika SMA).</p>
+                    </div>
+                    <div class="text-xs font-mono bg-slate-950 border border-slate-800 px-3 py-2 rounded-xl text-amber-300">
+                        Total Modul: 41 Soal Terverifikasi
+                    </div>
+                </div>
+
+                <!-- Bank Search & Filter -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                    <div class="sm:col-span-2 relative">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-500 text-xs"></i>
+                        <input type="text" id="bank-search-input" onkeyup="renderBankQuestions()" placeholder="Cari kata kunci soal atau rumus..." class="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500">
+                    </div>
+                    <div>
+                        <select id="bank-category-select" onchange="renderBankQuestions()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-500">
+                            <option value="ALL">Semua Kategori (41 Soal)</option>
+                            <option value="Fluida Dinamis">1. Fluida Dinamis (6 Soal)</option>
+                            <option value="Fluida Statis">2. Fluida Statis (10 Soal)</option>
+                            <option value="Impuls dan Momentum">3. Impuls & Momentum (15 Soal)</option>
+                            <option value="TKA Fisika SMA">4. TKA Fisika SMA (10 Soal)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Cards Grid -->
+            <div id="bank-questions-container" class="space-y-4">
+                <!-- 41 questions rendered here -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-950 border-t border-slate-800/80 text-center text-slate-500 py-3 text-xs">
+        <p>ALTAR ILMU • Aplikasi Gamifikasi Pembelajaran Fisika SMA Kelas 11 © 2026</p>
+    </footer>
+
+    <!-- AUDIO SYNTHESIZER ENGINE (NO EXTERNAL AUDIO FILES REQUIRED) -->
+    <script>
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+            playTone(freq, duration, type = 'sine', gainVal = 0.1) {
+                if (this.muted) return;
+                try {
+                    this.init();
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+            playCorrect() {
+                this.playTone(523.25, 0.15, 'triangle', 0.2); // C5
+                setTimeout(() => this.playTone(659.25, 0.15, 'triangle', 0.2), 100); // E5
+                setTimeout(() => this.playTone(783.99, 0.3, 'triangle', 0.25), 200); // G5
+            }
+            playWrong() {
+                this.playTone(220, 0.2, 'sawtooth', 0.2); // A3
+                setTimeout(() => this.playTone(185, 0.35, 'sawtooth', 0.2), 150); // F#3
+            }
+            playTick() {
+                this.playTone(800, 0.05, 'sine', 0.05);
+            }
+            playVictory() {
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((n, idx) => {
+                    setTimeout(() => this.playTone(n, 0.25, 'triangle', 0.3), idx * 120);
+                });
+            }
+        }
+        const sfx = new SoundEngine();
+
+        function toggleAudio() {
+            sfx.muted = !sfx.muted;
+            const btn = document.getElementById('btn-audio');
+            if (sfx.muted) {
+                btn.innerHTML = `<i class="fa-solid fa-volume-xmark text-slate-500"></i>`;
+            } else {
+                btn.innerHTML = `<i class="fa-solid fa-volume-high text-amber-400"></i>`;
+                sfx.playCorrect();
+            }
+        }
+    </script>
+
+    <!-- COMPLETE PHYSICS 11 DATASET (41 QUESTIONS STRICTLY MATCHING SOURCES) -->
+    <script>
+        const PHYSICS_QUESTION_BANK = [
+            // 1. FLUIDA DINAMIS (6 Soal)
+            {
+                id: "FD-01",
+                category: "Fluida Dinamis",
+                question: "Pipa bertingkat dialiri air ($\rho = 1000\\text{ kg/m}^3$, $g = 10\\text{ m/s}^2$). Pipa besar berpenampang $A_1$ ($h_1 = 5\\text{ m}$, $v_1 = 36\\text{ km/jam} = 10\\text{ m/s}$, $P_1 = 9{,}1 \\times 10^5\\text{ Pa}$) terhubung ke pipa kecil berpenampang $A_2$ ($h_2 = 1\\text{ m}$) dengan perbandingan $A_1 : A_2 = 4 : 1$. Berapakah kecepatan aliran air di pipa kecil ($v_2$)?",
+                options: ["A. 10 m/s", "B. 20 m/s", "C. 40 m/s", "D. 144 m/s"],
+                answer: 2,
+                explanation: "Menggunakan Persamaan Kontinuitas: $A_1 v_1 = A_2 v_2 \rightarrow (4) (10) = (1) v_2 \rightarrow v_2 = 40\\text{ m/s}$."
+            },
+            {
+                id: "FD-02",
+                category: "Fluida Dinamis",
+                question: "Berdasarkan data pipa bertingkat pada Soal 1 ($v_1 = 10\\text{ m/s}$, $v_2 = 40\\text{ m/s}$, $h_1 = 5\\text{ m}$, $h_2 = 1\\text{ m}$), berapakah selisih tekanan antara kedua pipa ($\Delta P = P_1 - P_2$)?",
+                options: ["A. 5,5 x 10^5 Pa", "B. 7,1 x 10^5 Pa", "C. 8,0 x 10^5 Pa", "D. 9,1 x 10^5 Pa"],
+                answer: 1,
+                explanation: "Bernoulli: $\Delta P = \\frac{1}{2}\rho(v_2^2 - v_1^2) + \rho g(h_2 - h_1) = \\frac{1}{2}(1000)(1600 - 100) + 1000(10)(1 - 5) = 750.000 - 40.000 = 7{,}1 \\times 10^5\\text{ Pa}$."
+            },
+            {
+                id: "FD-03",
+                category: "Fluida Dinamis",
+                question: "Berdasarkan selisih tekanan $\Delta P = 7{,}1 \\times 10^5\\text{ Pa}$ dan $P_1 = 9{,}1 \\times 10^5\\text{ Pa}$, berapakah besar tekanan mutlak pada pipa kecil ($P_2$)?",
+                options: ["A. 1,0 x 10^5 Pa", "B. 2,0 x 10^5 Pa", "C. 3,5 x 10^5 Pa", "D. 4,2 x 10^5 Pa"],
+                answer: 1,
+                explanation: "$P_2 = P_1 - \Delta P = (9{,}1 - 7{,}1) \\times 10^5\\text{ Pa} = 2{,}0 \\times 10^5\\text{ Pa}$."
+            },
+            {
+                id: "FD-04",
+                category: "Fluida Dinamis",
+                question: "Air mengalir pada pipa dengan diameter $d_1 = 2 d_2$. Jika kelajuan air pada pipa besar adalah $v_1 = 4\\text{ m/s}$, tentukan kelajuan air pada pipa kecil ($v_2$)!",
+                options: ["A. 8 m/s", "B. 12 m/s", "C. 16 m/s", "D. 32 m/s"],
+                answer: 2,
+                explanation: "$A \propto d^2 \rightarrow A_1 = 4 A_2$. Kontinuitas: $A_1 v_1 = A_2 v_2 \rightarrow 4(4) = 1(v_2) \rightarrow v_2 = 16\\text{ m/s}$."
+            },
+            {
+                id: "FD-05",
+                category: "Fluida Dinamis",
+                question: "Sebuah venturimeter tanpa manometer memiliki $A_1 = 5\\text{ cm}^2$ dan $A_2 = 4\\text{ cm}^2$. Beda tinggi permukaan air pada kedua pipa vertikal adalah $\Delta h = 45\\text{ cm} = 0{,}45\\text{ m}$ ($g = 10\\text{ m/s}^2$). Kecepatan air masuk ($v_1$) adalah...",
+                options: ["A. 2 m/s", "B. 3 m/s", "C. 4 m/s", "D. 5 m/s"],
+                answer: 2,
+                explanation: "$v_1 = \sqrt{\\frac{2g\Delta h}{(A_1/A_2)^2 - 1}} = \sqrt{\\frac{2(10)(0.45)}{(5/4)^2 - 1}} = \sqrt{\\frac{9}{25/16 - 1}} = \sqrt{\\frac{9}{9/16}} = \sqrt{16} = 4\\text{ m/s}$."
+            },
+            {
+                id: "FD-06",
+                category: "Fluida Dinamis",
+                question: "Pipa horizontal $A_1 = 5\\text{ cm}^2$ dan $A_2 = 3\\text{ cm}^2$ memiliki selisih tinggi cairan vertikal $\Delta h = 20\\text{ cm} = 0{,}2\\text{ m}$. Tentukan kelajuan aliran di pipa besar ($v_1$) dan pipa kecil ($v_2$)!",
+                options: ["A. v1 = 1,0 m/s & v2 = 2.0 m/s", "B. v1 = 1,5 m/s & v2 = 2.5 m/s", "C. v1 = 2,0 m/s & v2 = 3.0 m/s", "D. v1 = 2,5 m/s & v2 = 4.0 m/s"],
+                answer: 1,
+                explanation: "$v_1 = \sqrt{\\frac{2(10)(0.2)}{(5/3)^2 - 1}} = \sqrt{\\frac{4}{16/9}} = 1{,}5\\text{ m/s}$. Berdasarkan kontinuitas: $v_2 = \\frac{5}{3} \\times 1{,}5 = 2{,}5\\text{ m/s}$."
+            },
+
+            // 2. FLUIDA STATIS (10 Soal)
+            {
+                id: "FS-01",
+                category: "Fluida Statis",
+                question: "Sebuah bejana berisi air ($\rho_1 = 1000\\text{ kg/m}^3$, $h_1 = 0{,}4\\text{ m}$) dan minyak ($\rho_2 = 800\\text{ kg/m}^3$, $h_2 = 0{,}25\\text{ m}$). Berapakah tekanan hidrostatis total di dasar bejana ($g = 10\\text{ m/s}^2$)?",
+                options: ["A. 4.000 Pa", "B. 5.200 Pa", "C. 6.000 Pa", "D. 8.000 Pa"],
+                answer: 2,
+                explanation: "$P_h = \rho_1 g h_1 + \rho_2 g h_2 = (1000)(10)(0.4) + (800)(10)(0.25) = 4000 + 2000 = 6.000\\text{ Pa}$."
+            },
+            {
+                id: "FS-02",
+                category: "Fluida Statis",
+                question: "Selisih tekanan hidrostatis antara dua titik di dinding tabung adalah $\Delta P = 3000\\text{ Pa}$. Jika luas penampang luar dinding adalah $A = 0{,}2\\text{ m}^2$, berapakah selisih gaya horizontal yang bekerja?",
+                options: ["A. 300 N", "B. 600 N", "C. 900 N", "D. 1.500 N"],
+                answer: 1,
+                explanation: "$F = \Delta P \\times A = 3000 \\times 0{,}2 = 600\\text{ N}$."
+            },
+            {
+                id: "FS-03",
+                category: "Fluida Statis",
+                question: "Pipa U berisi air ($\rho_{air} = 1000\\text{ kg/m}^3$). Jika minyak baru dimasukkan hingga tinggi kolom minyak $h_m = 5\\text{ cm}$ dan selisih tinggi air $\Delta h_a = 8\\text{ cm}$, massa jenis minyak baru tersebut adalah...",
+                options: ["A. 1.200 kg/m^3", "B. 1.400 kg/m^3", "C. 1.600 kg/m^3", "D. 1.800 kg/m^3"],
+                answer: 2,
+                explanation: "Tekanan hidrostatis setimbang: $\rho_m h_m = \rho_a h_a \rightarrow \rho_m (5) = (1000)(8) \rightarrow \rho_m = 1.600\\text{ kg/m}^3$."
+            },
+            {
+                id: "FS-04",
+                category: "Fluida Statis",
+                question: "Dua cairan setimbang dalam pipa U. Setelah disesuaikan, permukaan kedua kolom cairan berada pada posisi setimbang $+15\\text{ cm}$ dari garis acuan. Berapakah selisih akhir ketinggian kedua permukaan?",
+                options: ["A. 0 cm", "B. 5 cm", "C. 10 cm", "D. 15 cm"],
+                answer: 0,
+                explanation: "Karena kedua permukaan berada pada level yang sama ($+15\\text{ cm}$), selisih ketinggian permukaannya adalah $0\\text{ cm}$."
+            },
+            {
+                id: "FS-05",
+                category: "Fluida Statis",
+                question: "Dongkrak hidrolik memiliki jari-jari piston kecil $r_1 = 2\\text{ cm}$ dan piston besar $r_2 = 10\\text{ cm}$. Jika gaya tekan pada piston kecil $F_1 = 150\\text{ N}$, berapakah beban maksimum yang dapat diangkat ($F_2$)?",
+                options: ["A. 750 N", "B. 1.500 N", "C. 3.750 N", "D. 7.500 N"],
+                answer: 2,
+                explanation: "Hukum Pascal: $F_2 = F_1 \\times (r_2 / r_1)^2 = 150 \\times (10/2)^2 = 150 \\times 25 = 3.750\\text{ N}$."
+            },
+            {
+                id: "FS-06",
+                category: "Fluida Statis",
+                question: "Mesin pengangkat mobil hidrolik memiliki perbandingan luas penampang $A_1 : A_2 = 1 : 25$. Untuk mengangkat mobil seberat $F_2 = 5000\\text{ N}$, gaya minimal pada piston kecil ($F_1$) adalah...",
+                options: ["A. 100 N", "B. 200 N", "C. 250 N", "D. 500 N"],
+                answer: 1,
+                explanation: "$F_1 = F_2 \\times (A_1 / A_2) = 5000 \\times (1/25) = 200\\text{ N}$."
+            },
+            {
+                id: "FS-07",
+                category: "Fluida Statis",
+                question: "Sebuah kubus ($\rho_b = 0{,}75\\text{ g/cm}^3$, volume $V = 400\\text{ cm}^3$) dicelupkan ke dalam air ($\rho_a = 1\\text{ g/cm}^3$, $g = 10\\text{ m/s}^2$). Besar gaya ke atas (Archimedes) yang dialami benda adalah...",
+                options: ["A. 2 N", "B. 3 N", "C. 4 N", "D. 5 N"],
+                answer: 1,
+                explanation: "Benda terapung: Volume tercelup $V_{bf} = (\\rho_b / \\rho_a) V = 0{,}75 \\times 400 = 300\\text{ cm}^3 = 3 \\times 10^{-4}\\text{ m}^3$. $F_A = \rho_a g V_{bf} = (1000)(10)(3 \\times 10^{-4}) = 3\\text{ N}$."
+            },
+            {
+                id: "FS-08",
+                category: "Fluida Statis",
+                question: "Berat benda di udara $W_u = 50\\text{ N}$. Saat tercelup seluruhnya dalam minyak ($\rho_m = 800\\text{ kg/m}^3$, $g = 10\\text{ m/s}^2$), berat sematanya $W_m = 42\\text{ N}$. Berapakah volume benda tersebut?",
+                options: ["A. 0.5 x 10^-3 m^3", "B. 1,0 x 10^-3 m^3 (1 Liter)", "C. 2,0 x 10^-3 m^3", "D. 5,0 x 10^-3 m^3"],
+                answer: 1,
+                explanation: "$F_A = W_u - W_m = 50 - 42 = 8\\text{ N}$. $V = F_A / (\rho_m g) = 8 / (800 \\times 10) = 10^{-3}\\text{ m}^3 = 1\\text{ Liter}$."
+            },
+            {
+                id: "FS-09",
+                category: "Fluida Statis",
+                question: "Sebuah bola terapung di permukaan zat cair dengan $1/4$ bagian volumenya berada di atas permukaan. Berapakah perbandingan massa jenis bola dengan massa jenis zat cair ($\rho_b : \rho_f$)?",
+                options: ["A. 1 : 4", "B. 1 : 2", "C. 3 : 4", "D. 4 : 3"],
+                answer: 2,
+                explanation: "Bagian tercelup = $1 - 1/4 = 3/4$. Syarat terapung: $\\rho_b / \\rho_f = V_{tercelup} / V_{total} = 3/4$ (3 : 4)."
+            },
+            {
+                id: "FS-10",
+                category: "Fluida Statis",
+                question: "Balok kayu ($\rho_k = 0{,}6\\text{ g/cm}^3$, $V = 500\\text{ cm}^3$) dimasukkan ke dalam bejana berisi air ($\rho_a = 1\\text{ g/cm}^3$). Volume balok yang tenggelam di dalam air adalah...",
+                options: ["A. 200 cm^3", "B. 300 cm^3", "C. 400 cm^3", "D. 500 cm^3"],
+                answer: 1,
+                explanation: "$V_{tenggelam} = (\\rho_k / \\rho_a) \\times V = (0{,}6 / 1) \\times 500 = 300\\text{ cm}^3$."
+            },
+
+            // 3. IMPULS DAN MOMENTUM (15 Soal)
+            {
+                id: "IM-01",
+                category: "Impuls dan Momentum",
+                question: "Sebuah gaya bekerja pada benda memberikan impuls $I = 200\\text{ N}\cdot\text{s}$ dalam selang waktu $\Delta t = 2\\text{ s}$. Besar gaya rata-rata tersebut adalah...",
+                options: ["A. 50 N", "B. 100 N", "C. 200 N", "D. 400 N"],
+                answer: 1,
+                explanation: "$F = I / \Delta t = 200 / 2 = 100\\text{ N}$."
+            },
+            {
+                id: "IM-02",
+                category: "Impuls dan Momentum",
+                question: "Bola bermassa $m = 0{,}2\\text{ kg}$ bergerak dengan $v_1 = 10\\text{ m/s}$ membentur dinding dan memantul kembali dengan $v_2 = -8\\text{ m/s}$. Besar impuls yang diterima bola adalah...",
+                options: ["A. 0,4 N.s", "B. 1,6 N.s", "C. 3,6 N.s", "D. 4,0 N.s"],
+                answer: 2,
+                explanation: "$I = \Delta p = m(v_2 - v_1) = 0{,}2 (-8 - 10) = -3{,}6\\text{ N}\cdot\text{s}$ (Besar impuls = $3{,}6\\text{ N}\cdot\text{s}$)."
+            },
+            {
+                id: "IM-03",
+                category: "Impuls dan Momentum",
+                question: "Benda A ($m_A = 2\\text{ kg}$, $v_A = 6\\text{ m/s}$) menumbuk benda B ($m_B = 3\\text{ kg}$, $v_B = 0$) secara lenting sempurna. Kecepatan benda A setelah tumbukan ($v_A'$) adalah...",
+                options: ["A. -1,2 m/s", "B. +1,2 m/s", "C. +2,4 m/s", "D. +4,8 m/s"],
+                answer: 0,
+                explanation: "$v_A' = \\frac{m_A - m_B}{m_A + m_B} v_A = \\frac{2 - 3}{2 + 3} (6) = \\frac{-1}{5} (6) = -1{,}2\\text{ m/s}$."
+            },
+            {
+                id: "IM-04",
+                category: "Impuls dan Momentum",
+                question: "Gaya $F = 10\\text{ N}$ bekerja pada benda bermassa $m = 0{,}5\\text{ kg}$ selama $\Delta t = 2\\text{ s}$. Berapakah impuls ($I$) dan perubahan kecepatan ($\Delta v$) benda?",
+                options: ["A. I = 10 N.s & Δv = 20 m/s", "B. I = 20 N.s & Δv = 40 m/s", "C. I = 20 N.s & Δv = 10 m/s", "D. I = 40 N.s & Δv = 80 m/s"],
+                answer: 1,
+                explanation: "$I = F \\times \Delta t = 10 \\times 2 = 20\\text{ N}\cdot\text{s}$. $\Delta v = I / m = 20 / 0{,}5 = 40\\text{ m/s}$."
+            },
+            {
+                id: "IM-05",
+                category: "Impuls dan Momentum",
+                question: "Bola bermassa $m = 0{,}3\\text{ kg}$ jatuh bebas dan mengenai lantai dengan kecepatan $v_1 = -5\\text{ m/s}$, lalu memantul tegak lurus ke atas dengan $v_2 = +5\\text{ m/s}$. Impuls pemantulan adalah...",
+                options: ["A. 0 N.s", "B. +1,5 N.s", "C. +3,0 N.s (ke atas)", "D. -3,0 N.s"],
+                answer: 2,
+                explanation: "$I = m(v_2 - v_1) = 0{,}3 (5 - (-5)) = 0{,}3 (10) = +3{,}0\\text{ N}\cdot\text{s}$ (arah ke atas)."
+            },
+            {
+                id: "IM-06",
+                category: "Impuls dan Momentum",
+                question: "Mobil bermassa $1200\\text{ kg}$ mengalami peningkatan kecepatan dari $10\\text{ m/s}$ menjadi $25\\text{ m/s}$ dalam waktu $\Delta t = 5\\text{ s}$. Gaya rata-rata mesin mobil tersebut adalah...",
+                options: ["A. 2.400 N", "B. 3.600 N", "C. 4.800 N", "D. 6.000 N"],
+                answer: 1,
+                explanation: "$F = m \\frac{v_2 - v_1}{\Delta t} = 1200 \\times \\frac{25 - 10}{5} = 1200 \\times 3 = 3.600\\text{ N}$."
+            },
+            {
+                id: "IM-07",
+                category: "Impuls dan Momentum",
+                question: "Benda 1 ($m_1 = 2\\text{ kg}$, $v_1 = 4\\text{ m/s}$) menumbuk benda 2 ($m_2 = 3\\text{ kg}$, $v_2 = 0$). Jika tumbukan tidak lenting sama sekali (keduanya menyatu), kecepatan akhir ($v'$) adalah...",
+                options: ["A. 0,8 m/s", "B. 1,6 m/s", "C. 2,0 m/s", "D. 2,4 m/s"],
+                answer: 1,
+                explanation: "$v' = \\frac{m_1 v_1 + m_2 v_2}{m_1 + m_2} = \\frac{(2)(4) + 0}{2 + 3} = \\frac{8}{5} = 1{,}6\\text{ m/s}$."
+            },
+            {
+                id: "IM-08",
+                category: "Impuls dan Momentum",
+                question: "Gaya penghambat $F = 2\\text{ N}$ bekerja pada benda bermassa $1\\text{ kg}$ hingga kecepatannya berkurang dari $6\\text{ m/s}$ menjadi $2\\text{ m/s}$. Durasi waktu ($\Delta t$) bekerja gaya adalah...",
+                options: ["A. 1 s", "B. 2 s", "C. 3 s", "D. 4 s"],
+                answer: 1,
+                explanation: "$\Delta p = 1 (2 - 6) = -4\\text{ kg}\cdot\text{m/s}$. $\Delta t = |\\Delta p| / F = 4 / 2 = 2\\text{ detik}$."
+            },
+            {
+                id: "IM-09",
+                category: "Impuls dan Momentum",
+                question: "Bola $m = 0{,}5\\text{ kg}$ menumbuk dinding dengan $v_1 = 12\\text{ m/s}$ dan memantul $v_2 = -10\\text{ m/s}$. Besar impuls pengereman oleh dinding adalah...",
+                options: ["A. -11 N.s (besar 11 N.s)", "B. -5 N.s", "C. +6 N.s", "D. +11 N.s"],
+                answer: 0,
+                explanation: "$I = m(v_2 - v_1) = 0{,}5 (-10 - 12) = -11\\text{ N}\cdot\text{s}$."
+            },
+            {
+                id: "IM-10",
+                category: "Impuls dan Momentum",
+                question: "Sebuah objek bermassa $m = 0{,}4\\text{ kg}$ mengalami perubahan kecepatan dari $5\\text{ m/s}$ menjadi $9\\text{ m/s}$. Berapakah perubahan momentumnya ($\Delta p$)?",
+                options: ["A. 0,8 kg.m/s", "B. 1,6 kg.m/s", "C. 2,0 kg.m/s", "D. 3,6 kg.m/s"],
+                answer: 1,
+                explanation: "$\Delta p = m(v_2 - v_1) = 0{,}4(9 - 5) = 0{,}4(4) = 1{,}6\\text{ kg}\cdot\text{m/s}$."
+            },
+            {
+                id: "IM-11",
+                category: "Impuls dan Momentum",
+                question: "Benda bermassa $0{,}25\\text{ kg}$ bergerak dengan $v_1 = 4\\text{ m/s}$ lalu berbalik arah menjadi $v_2 = -3\\text{ m/s}$. Selisih momentum awal dan akhir (impuls) adalah...",
+                options: ["A. -0,25 N.s", "B. -1,75 N.s", "C. +0,75 N.s", "D. +1,75 N.s"],
+                answer: 1,
+                explanation: "$\Delta p = m(v_2 - v_1) = 0{,}25(-3 - 4) = 0{,}25(-7) = -1{,}75\\text{ N}\cdot\text{s}$."
+            },
+            {
+                id: "IM-12",
+                category: "Impuls dan Momentum",
+                question: "Benda bermassa $10\\text{ kg}$ dipercepat dari $v_1 = 2\\text{ m/s}$ menjadi $v_2 = 5\\text{ m/s}$. Perubahan momentum benda tersebut adalah...",
+                options: ["A. 15 kg.m/s", "B. 20 kg.m/s", "C. 30 kg.m/s", "D. 50 kg.m/s"],
+                answer: 2,
+                explanation: "$\Delta p = m(v_2 - v_1) = 10(5 - 2) = 30\\text{ kg}\cdot\text{m/s}$."
+            },
+            {
+                id: "IM-13",
+                category: "Impuls dan Momentum",
+                question: "Gaya konstan $F = 3\\text{ N}$ memberikan impuls sebesar $I = 9\\text{ N}\cdot\text{s}$. Durasi interval waktu kontak ($\Delta t$) adalah...",
+                options: ["A. 2 s", "B. 3 s", "C. 6 s", "D. 27 s"],
+                answer: 1,
+                explanation: "$\Delta t = I / F = 9 / 3 = 3\\text{ detik}$."
+            },
+            {
+                id: "IM-14",
+                category: "Impuls dan Momentum",
+                question: "Mobil seberat $m = 1000\\text{ kg}$ bergerak $25\\text{ m/s}$ direm mendadak hingga berhenti ($v_2 = 0$). Tanda dan besar perubahan momentumnya adalah...",
+                options: ["A. +25.000 kg.m/s", "B. -25.000 kg.m/s", "C. -10.000 kg.m/s", "D. 0 kg.m/s"],
+                answer: 1,
+                explanation: "$\Delta p = m(v_2 - v_1) = 1000(0 - 25) = -25.000\\text{ kg}\cdot\text{m/s}$ (Tanda minus berarti arah impuls berlawanan dengan gerak awal)."
+            },
+            {
+                id: "IM-15",
+                category: "Impuls dan Momentum",
+                question: "Gaya $F = 50\\text{ N}$ bekerja selama $\Delta t = 2\\text{ s}$ pada benda $m = 10\\text{ kg}$. Berapakah perubahan kecepatan ($\Delta v$) yang dialami benda?",
+                options: ["A. 5 m/s", "B. 10 m/s", "C. 20 m/s", "D. 100 m/s"],
+                answer: 1,
+                explanation: "$I = F \Delta t = 100\\text{ N}\cdot\text{s}$. $\Delta v = I / m = 100 / 10 = 10\\text{ m/s}$."
+            },
+
+            // 4. LATIHAN SOAL TKA FISIKA SMA (10 Soal)
+            {
+                id: "TKA-01",
+                category: "TKA Fisika SMA",
+                question: "Grafik hubungan gaya ($F$) terhadap waktu ($t$) berbentuk segitiga dengan alas $t = 0{,}5\\text{ s}$ dan tinggi $F_{maks} = 10\\text{ N}$. Jika benda bermassa $m = 1\\text{ kg}$ bermula dari keadaan diam, kecepatan akhir benda adalah...",
+                options: ["A. 1,25 m/s", "B. 2,5 m/s", "C. 5,0 m/s", "D. 10,0 m/s"],
+                answer: 1,
+                explanation: "Luas grafik $F-t = \\text{Luas Segitiga} = \\frac{1}{2} \\times 0{,}5 \\times 10 = 2{,}5\\text{ N}\cdot\text{s}$. $v = I / m = 2{,}5 / 1 = 2{,}5\\text{ m/s}$."
+            },
+            {
+                id: "TKA-02",
+                category: "TKA Fisika SMA",
+                question: "Bola bisbol ($m = 0{,}2\\text{ kg}$) dilempar horizontal dengan $v_1 = 20\\text{ m/s}$ lalu dipukul kembali hingga $v_2 = -30\\text{ m/s}$. Jika waktu kontak pemukul $\Delta t = 0{,}01\\text{ s}$, gaya rata-rata pemukul adalah...",
+                options: ["A. 500 N", "B. 800 N", "C. 1.000 N", "D. 1.200 N"],
+                answer: 2,
+                explanation: "$F = m \\frac{v_2 - v_1}{\Delta t} = 0{,}2 \\times \\frac{-30 - 20}{0{,}01} = 0{,}2 \\times (-5000) = -1.000\\text{ N}$ (Besar gaya = $1.000\\text{ N}$)."
+            },
+            {
+                id: "TKA-03",
+                category: "TKA Fisika SMA",
+                question: "Anak bermassa $40\\text{ kg}$ berdiri di perahu $60\\text{ kg}$ yang meluncur dengan $v = 5\\text{ m/s}$. Jika anak melompat ke depan dengan $v_{anak} = 8\\text{ m/s}$, kecepatan perahu tepat setelah melompat ($v_{perahu}'$) adalah...",
+                options: ["A. 1,5 m/s", "B. 2,0 m/s", "C. 3,0 m/s", "D. 4,5 m/s"],
+                answer: 2,
+                explanation: "Kekekalan Momentum: $(m_a + m_p) v = m_a v_a' + m_p v_p' \rightarrow (100)(5) = (40)(8) + 60 v_p' \rightarrow 500 = 320 + 60 v_p' \rightarrow 60 v_p' = 180 \rightarrow v_p' = 3{,}0\\text{ m/s}$."
+            },
+            {
+                id: "TKA-04",
+                category: "TKA Fisika SMA",
+                question: "Ayunan balistik: Peluru bermassa $m = 10\\text{ g}$ bersarang pada balok $M = 990\\text{ g}$. Gabungan balok dan peluru terayun hingga ketinggian maksimum $h = 0{,}2\\text{ m}$ ($g = 10\\text{ m/s}^2$). Kecepatan awal peluru adalah...",
+                options: ["A. 100 m/s", "B. 150 m/s", "C. 200 m/s", "D. 400 m/s"],
+                answer: 2,
+                explanation: "Kecepatan bersama setelah tumbukan: $v' = \sqrt{2gh} = \sqrt{2(10)(0.2)} = 2\\text{ m/s}$. Kecepatan peluru: $v = \\frac{m+M}{m} v' = \\frac{1000}{10} (2) = 200\\text{ m/s}$."
+            },
+            {
+                id: "TKA-05",
+                category: "TKA Fisika SMA",
+                question: "Balok A ($2\\text{ kg}$, $v_A = 4\\text{ m/s}$) menumbuk Balok B ($3\\text{ kg}$, diam) di atas lantai licin. Tumbukan bersifat tidak lenting sama sekali. Kecepatan kedua balok setelah tumbukan adalah...",
+                options: ["A. 0,8 m/s", "B. 1,2 m/s", "C. 1,6 m/s", "D. 2,4 m/s"],
+                answer: 2,
+                explanation: "$v' = \\frac{(2)(4) + 0}{2 + 3} = \\frac{8}{5} = 1{,}6\\text{ m/s}$."
+            },
+            {
+                id: "TKA-06",
+                category: "TKA Fisika SMA",
+                question: "Bola dijatuhkan dari ketinggian $h_0 = 1\\text{ m}$ di atas lantai keras. Setelah memantul pertama kali, bola mencapai tinggi $h_1 = 0{,}64\\text{ m}$. Koefisien restitusi ($e$) antara bola dan lantai adalah...",
+                options: ["A. 0,5", "B. 0,64", "C. 0,75", "D. 0,8"],
+                answer: 3,
+                explanation: "$e = \sqrt{h_1 / h_0} = \sqrt{0{,}64 / 1} = 0{,}8$."
+            },
+            {
+                id: "TKA-07",
+                category: "TKA Fisika SMA",
+                question: "Balok $m_1 = 1\\text{ kg}$ dilepas dari puncak bidang miring licin setinggi $h = 0{,}8\\text{ m}$ ($g = 10\\text{ m/s}^2$) lalu menumbuk balok $m_2 = 1\\text{ kg}$ yang diam di dasar secara lenting sempurna. Kecepatan balok $m_2$ setelah tumbukan adalah...",
+                options: ["A. 2 m/s", "B. 3 m/s", "C. 4 m/s", "D. 8 m/s"],
+                answer: 2,
+                explanation: "Kecepatan $m_1$ di dasar: $v = \sqrt{2gh} = \sqrt{2(10)(0.8)} = 4\\text{ m/s}$. Karena $m_1 = m_2$ dan tumbukan lenting sempurna, terjadi pertukaran kecepatan murni, sehingga $v_2' = 4\\text{ m/s}$."
+            },
+            {
+                id: "TKA-08",
+                category: "TKA Fisika SMA",
+                question: "Sebuah proyektil meledak di titik tertinggi menjadi 3 bagian sama besar. Bagian 1 bergerak tegak lurus ke barat $20\\text{ m/s}$, bagian 2 ke utara $20\\text{ m/s}$. Vektor kecepatan bagian ke-3 tepat setelah ledakan adalah...",
+                options: ["A. 10 m/s", "B. 20 m/s", "C. 20√2 m/s ke arah Tenggara", "D. 40 m/s"],
+                answer: 2,
+                explanation: "Momentum sebelum meledak di puncak = 0 (dalam acuan proyektil). $\vec{p}_1 + \vec{p}_2 + \vec{p}_3 = 0 \rightarrow \vec{v}_3 = -(\vec{v}_1 + \vec{v}_2) \rightarrow |v_3| = \sqrt{20^2 + 20^2} = 20\sqrt{2}\\text{ m/s}$."
+            },
+            {
+                id: "TKA-09",
+                category: "TKA Fisika SMA",
+                question: "Manakah analisis yang BENAR mengenai fungsi Airbag pada sistem keselamatan mobil saat terjadi tabrakan?",
+                options: [
+                    "A. Mengurangi gaya impulsif dengan cara memperpanjang selang waktu kontak pengendara",
+                    "B. Memperbesar impuls yang dialami tubuh pengendara agar mobil cepat berhenti",
+                    "C. Menghilangkan hukum kekekalan momentum pada tabrakan",
+                    "D. Mengurangi kecepatan awal mobil secara instan tanpa mengubah momentum"
+                ],
+                answer: 0,
+                explanation: "Prinsip Airbag: Memperpanjang selang waktu kontak ($\Delta t$) sehingga gaya dampak ($F = \Delta p / \Delta t$) yang dialami tubuh menjadi jauh lebih kecil dan aman."
+            },
+            {
+                id: "TKA-10",
+                category: "TKA Fisika SMA",
+                question: "Dua mobil bertabrakan frontal. Mobil A ($1000\\text{ kg}$, $20\\text{ m/s}$) dan Mobil B ($2000\\text{ kg}$, $-10\\text{ m/s}$). Jika kedua mobil ringsek dan menyatu setelah tabrakan, tentukan kecepatan akhirnya!",
+                options: ["A. 0 m/s (Kedua mobil langsung berhenti)", "B. 5 m/s ke kanan", "C. -5 m/s ke kiri", "D. 10 m/s ke kanan"],
+                answer: 0,
+                explanation: "$p_{total} = m_A v_A + m_B v_B = (1000)(20) + (2000)(-10) = 20000 - 20000 = 0$. Karena momentum total nol, kecepatan akhir keduanya adalah $0\\text{ m/s}$."
+            }
+        ];
+    </script>
+
+    <!-- MAIN APP STATE & REAL-TIME LOGIC -->
+    <script>
+        // GLOBAL APP STATE
+        const state = {
+            currentView: 'landing',
+            roomCode: 'FISIKA11',
+            teacherTopicFilter: 'ALL',
+            antiLeakEnabled: false, // Default: OFF during match
+            
+            // Current Student Profile
+            student: {
+                id: 'student_' + Math.random().toString(36).substr(2, 6),
+                name: 'Budi Santoso',
+                absen: '07',
+                hero: 'Knight',
+                heroIcon: '🛡️',
+                score: 0,
+                correctCount: 0,
+                wrongCount: 0,
+                finished: false,
+                finishTime: 0,
+                currentQuestionIndex: 0
+            },
+            
+            // Classroom Roster (up to 40 students + bots)
+            roster: [],
+            
+            // Active Question Array (Randomized per student)
+            questionDeck: [],
+            currentQuestion: null,
+            timerSeconds: 180,
+            timerInterval: null
+        };
+
+        // DOM LOADER & INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            initRosterWithInitialStudent();
+            renderCrystalProgress();
+            renderBankQuestions();
+            setupKeyboardListeners();
+            initArenaCanvas();
+
+            // BroadcastChannel for offline multi-tab sync testing
+            try {
+                window.channel = new BroadcastChannel('altar_fisika_11_sync');
+                window.channel.onmessage = (e) => handleSyncMessage(e.data);
+            } catch(e) {}
+        });
+
+        // 1. NAVIGATION & VIEW SWITCHER
+        function switchView(viewName) {
+            state.currentView = viewName;
+            
+            ['landing', 'student-game', 'teacher', 'bank'].forEach(v => {
+                const el = document.getElementById(`view-${v}`);
+                const tab = document.getElementById(`tab-${v}`);
+                if (el) el.classList.add('hidden');
+                if (tab) {
+                    tab.classList.remove('bg-slate-800', 'text-amber-400', 'shadow');
+                    tab.classList.add('text-slate-400');
+                }
+            });
+
+            const activeView = document.getElementById(`view-${viewName}`);
+            const activeTab = document.getElementById(`tab-${viewName}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeTab) {
+                activeTab.classList.add('bg-slate-800', 'text-amber-400', 'shadow');
+                activeTab.classList.remove('text-slate-400');
+            }
+
+            // Trigger view-specific re-renders
+            if (viewName === 'teacher') {
+                renderTeacherLeaderboard();
+                resizeArenaCanvas();
+            } else if (viewName === 'bank') {
+                renderBankQuestions();
+            }
+
+            sfx.playTick();
+        }
+
+        // 2. HERO SELECTION & STUDENT JOIN
+        function selectHero(heroTitle, heroIcon) {
+            state.student.hero = heroTitle;
+            state.student.heroIcon = heroIcon;
+
+            document.querySelectorAll('.hero-btn').forEach(btn => {
+                btn.classList.remove('active', 'border-2', 'border-emerald-500', 'bg-emerald-950/40');
+                btn.classList.add('border-slate-800', 'bg-slate-950');
+            });
+            event.currentTarget.classList.add('active', 'border-2', 'border-emerald-500', 'bg-emerald-950/40');
+            event.currentTarget.classList.remove('border-slate-800', 'bg-slate-950');
+            sfx.playTick();
+        }
+
+        function joinAsStudent() {
+            const name = document.getElementById('input-student-name').value.trim() || 'Siswa Fisika';
+            const absen = document.getElementById('input-student-absen').value || '01';
+            const room = document.getElementById('input-student-room').value.trim().toUpperCase() || 'FISIKA11';
+
+            state.student.name = name;
+            state.student.absen = absen.toString().padStart(2, '0');
+            state.roomCode = room;
+
+            document.getElementById('display-room-code').innerText = `RUANGAN: ${room}`;
+            updateStudentRosterSelf();
+
+            // Update Lobby UI
+            document.getElementById('lobby-student-name').innerText = state.student.name;
+            document.getElementById('lobby-student-absen').innerText = state.student.absen;
+            document.getElementById('lobby-hero-title').innerText = state.student.hero;
+            document.getElementById('lobby-hero-icon').innerText = state.student.heroIcon;
+
+            switchView('student-game');
+            document.getElementById('student-lobby-box').classList.remove('hidden');
+            document.getElementById('student-quiz-hud').classList.add('hidden');
+            document.getElementById('student-victory-box').classList.add('hidden');
+            
+            broadcastState();
+        }
+
+        function startInstantStudentDemo() {
+            joinAsStudent();
+            forceStartMatchFromStudent();
+        }
+
+        function forceStartMatchFromStudent() {
+            document.getElementById('student-lobby-box').classList.add('hidden');
+            document.getElementById('student-quiz-hud').classList.remove('hidden');
+
+            // Generate Randomized Question Deck for Student
+            state.questionDeck = [...PHYSICS_QUESTION_BANK].sort(() => Math.random() - 0.5);
+            state.student.currentQuestionIndex = 0;
+            state.student.correctCount = 0;
+            state.student.score = 0;
+            state.student.wrongCount = 0;
+            state.student.finished = false;
+
+            updateStudentHUDHeader();
+            loadQuestion(0);
+            broadcastState();
+        }
+
+        // 3. STUDENT QUIZ ENGINE & TIMER
+        function loadQuestion(index) {
+            if (state.student.correctCount >= 10) {
+                showStudentVictory();
+                return;
+            }
+
+            if (index >= state.questionDeck.length) {
+                // Reshuffle if deck exhausted before 10 correct
+                state.questionDeck = [...PHYSICS_QUESTION_BANK].sort(() => Math.random() - 0.5);
+                index = 0;
+                state.student.currentQuestionIndex = 0;
+            }
+
+            state.currentQuestion = state.questionDeck[index];
+            
+            // Hide feedback overlay
+            document.getElementById('hud-feedback-modal').classList.add('hidden');
+            document.getElementById('quiz-card-box').classList.remove('hidden');
+
+            // Update Question UI
+            document.getElementById('hud-topic-pill').innerHTML = `<i class="fa-solid fa-atom"></i> ${state.currentQuestion.category}`;
+            document.getElementById('hud-question-number').innerText = (index + 1);
+            document.getElementById('hud-question-text').innerHTML = state.currentQuestion.question;
+
+            // Render 4 Options
+            const optsContainer = document.getElementById('hud-options-container');
+            optsContainer.innerHTML = '';
+            
+            state.currentQuestion.options.forEach((optText, optIdx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 rounded-2xl transition font-medium text-sm text-slate-200 flex items-center justify-between group shadow-md active:scale-98";
+                btn.onclick = () => submitAnswer(optIdx);
+                btn.innerHTML = `
+                    <span>${optText}</span>
+                    <span class="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-xs font-mono text-slate-400 group-hover:text-amber-400 group-hover:border-amber-500">${String.fromCharCode(65 + optIdx)}</span>
+                `;
+                optsContainer.appendChild(btn);
+            });
+
+            // Trigger MathJax re-render for formulas
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
+
+            startTimer();
+        }
+
+        function startTimer() {
+            clearInterval(state.timerInterval);
+            state.timerSeconds = 180; // 3 Minutes per question
+            updateTimerDisplay();
+
+            state.timerInterval = setInterval(() => {
+                state.timerSeconds--;
+                updateTimerDisplay();
+
+                if (state.timerSeconds <= 0) {
+                    clearInterval(state.timerInterval);
+                    // Time out counts as wrong answer (-1)
+                    sfx.playWrong();
+                    applyScoreChange(-1, false);
+                    showFeedbackOverlay(false, "Waktu 3 Menit Habis! (-1 Poin)");
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(state.timerSeconds / 60).toString().padStart(2, '0');
+            const secs = (state.timerSeconds % 60).toString().padStart(2, '0');
+            const timerTxt = document.getElementById('hud-timer-text');
+            const timerBar = document.getElementById('hud-timer-bar');
+
+            timerTxt.innerText = `${mins}:${secs}`;
+            const pct = (state.timerSeconds / 180) * 100;
+            timerBar.style.width = `${pct}%`;
+
+            if (state.timerSeconds <= 30) {
+                timerTxt.className = "font-mono font-bold text-base text-rose-500 animate-pulse";
+                timerBar.className = "timer-bar h-full bg-rose-500 w-full rounded-full animate-pulse";
+                if (state.timerSeconds % 2 === 0) sfx.playTick();
+            } else if (state.timerSeconds <= 60) {
+                timerTxt.className = "font-mono font-bold text-base text-amber-400";
+                timerBar.className = "timer-bar h-full bg-amber-400 w-full rounded-full";
+            } else {
+                timerTxt.className = "font-mono font-bold text-base text-emerald-400";
+                timerBar.className = "timer-bar h-full bg-emerald-500 w-full rounded-full";
+            }
+        }
+
+        function submitAnswer(chosenIdx) {
+            clearInterval(state.timerInterval);
+            const isCorrect = (chosenIdx === state.currentQuestion.answer);
+
+            if (isCorrect) {
+                sfx.playCorrect();
+                applyScoreChange(+3, true);
+                showFeedbackOverlay(true, "SERANGAN KRITIS! +3 Poin");
+            } else {
+                sfx.playWrong();
+                applyScoreChange(-1, false);
+                showFeedbackOverlay(false, "MELESET! -1 Poin");
+            }
+        }
+
+        function applyScoreChange(diff, isCorrect) {
+            state.student.score += diff;
+            if (isCorrect) {
+                state.student.correctCount++;
+            } else {
+                state.student.wrongCount++;
+            }
+            updateStudentHUDHeader();
+            updateStudentRosterSelf();
+            broadcastState();
+        }
+
+        function showFeedbackOverlay(isCorrect, titleText) {
+            document.getElementById('quiz-card-box').classList.add('hidden');
+            const modal = document.getElementById('hud-feedback-modal');
+            modal.classList.remove('hidden');
+
+            const iconBox = document.getElementById('feedback-icon-box');
+            const titleEl = document.getElementById('feedback-title');
+            const scoreDiffEl = document.getElementById('feedback-score-diff');
+            const expEl = document.getElementById('feedback-explanation');
+
+            if (isCorrect) {
+                modal.className = "bg-slate-900/95 border-2 border-emerald-500 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur correct-glow";
+                iconBox.className = "w-16 h-16 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-3xl mx-auto border border-emerald-500/40";
+                iconBox.innerHTML = "💥";
+                titleEl.className = "text-2xl font-black font-fantasy text-emerald-400";
+                titleEl.innerText = titleText;
+                scoreDiffEl.innerText = "+3 Poin Menuju Altar!";
+            } else {
+                modal.className = "bg-slate-900/95 border-2 border-rose-500 rounded-3xl p-6 text-center space-y-4 shadow-2xl backdrop-blur wrong-shake";
+                iconBox.className = "w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 flex items-center justify-center text-3xl mx-auto border border-rose-500/40";
+                iconBox.innerHTML = "🛡️💥";
+                titleEl.className = "text-2xl font-black font-fantasy text-rose-400";
+                titleEl.innerText = titleText;
+                scoreDiffEl.innerText = "-1 Poin (Coba Soal Berikutnya!)";
+            }
+
+            // Anti-leak teacher setting check
+            if (state.antiLeakEnabled || state.student.correctCount >= 10) {
+                expEl.innerHTML = state.currentQuestion.explanation;
+            } else {
+                expEl.innerHTML = `<span class="italic text-slate-400"><i class="fa-solid fa-lock text-amber-400 mr-1"></i> Pembahasan rumus dikunci oleh guru saat kompetisi berlangsung. Akan terbuka setelah 10 soal selesai!</span>`;
+            }
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
+        }
+
+        function nextQuestion() {
+            if (state.student.correctCount >= 10) {
+                showStudentVictory();
+            } else {
+                state.student.currentQuestionIndex++;
+                loadQuestion(state.student.currentQuestionIndex);
+            }
+        }
+
+        function renderCrystalProgress() {
+            const bar = document.getElementById('hud-crystal-bar');
+            if (!bar) return;
+            bar.innerHTML = '';
+            for (let i = 1; i <= 10; i++) {
+                const crystal = document.createElement('div');
+                const isLit = i <= state.student.correctCount;
+                crystal.className = `h-3 rounded-md transition-all duration-300 ${isLit ? 'bg-amber-400 shadow-[0_0_8px_#f59e0b]' : 'bg-slate-800 border border-slate-700'}`;
+                bar.appendChild(crystal);
+            }
+            document.getElementById('hud-progress-text').innerText = `${state.student.correctCount} / 10 Benar`;
+        }
+
+        function updateStudentHUDHeader() {
+            document.getElementById('hud-student-name').innerText = state.student.name;
+            document.getElementById('hud-student-absen').innerText = state.student.absen;
+            document.getElementById('hud-hero-icon').innerText = state.student.heroIcon;
+            document.getElementById('hud-student-score').innerText = `${state.student.score} Poin`;
+            
+            // Calculate Rank
+            const sorted = [...state.roster].sort((a,b) => (b.finished - a.finished) || (b.score - a.score));
+            const myRankIdx = sorted.findIndex(s => s.id === state.student.id);
+            const rankStr = (myRankIdx !== -1) ? `#${myRankIdx + 1}` : '#1';
+            document.getElementById('hud-student-rank').innerText = rankStr;
+
+            renderCrystalProgress();
+        }
+
+        function showStudentVictory() {
+            clearInterval(state.timerInterval);
+            state.student.finished = true;
+            state.student.finishTime = Date.now();
+            updateStudentRosterSelf();
+            broadcastState();
+
+            sfx.playVictory();
+            document.getElementById('student-quiz-hud').classList.add('hidden');
+            document.getElementById('student-victory-box').classList.remove('hidden');
+
+            document.getElementById('victory-score').innerText = `${state.student.score} Poin`;
+            document.getElementById('victory-wrong').innerText = `${state.student.wrongCount}x`;
+            
+            const sorted = [...state.roster].sort((a,b) => (b.finished - a.finished) || (b.score - a.score));
+            const myRankIdx = sorted.findIndex(s => s.id === state.student.id);
+            document.getElementById('victory-rank').innerText = `#${myRankIdx + 1}`;
+        }
+
+        function resetCurrentStudentGame() {
+            state.student.score = 0;
+            state.student.correctCount = 0;
+            state.student.wrongCount = 0;
+            state.student.finished = false;
+            forceStartMatchFromStudent();
+        }
+
+        function setupKeyboardListeners() {
+            window.addEventListener('keydown', (e) => {
+                if (state.currentView !== 'student-game') return;
+                if (document.getElementById('quiz-card-box').classList.contains('hidden')) return;
+
+                const keyMap = { '1': 0, '2': 1, '3': 2, '4': 3, 'a': 0, 'b': 1, 'c': 2, 'd': 3, 'A': 0, 'B': 1, 'C': 2, 'D': 3 };
+                if (keyMap[e.key] !== undefined) {
+                    submitAnswer(keyMap[e.key]);
+                }
+            });
+        }
+
+        // 4. ROSTER & BOT SIMULATION ENGINE (UP TO 40 STUDENTS)
+        function initRosterWithInitialStudent() {
+            state.roster = [state.student];
+            renderLobbyRoster();
+            renderTeacherLeaderboard();
+        }
+
+        function updateStudentRosterSelf() {
+            const idx = state.roster.findIndex(s => s.id === state.student.id);
+            if (idx !== -1) {
+                state.roster[idx] = { ...state.student };
+            } else {
+                state.roster.push({ ...state.student });
+            }
+            renderLobbyRoster();
+            renderTeacherLeaderboard();
+        }
+
+        function addBotSimulations(count = 15) {
+            const botNames = ["Ahmad Fauzi", "Citra Dewi", "Deni Pratama", "Eka Putri", "Fajar Nugraha", "Gita Gutawa", "Hafiz Syah", "Indah Permata", "Joko Susilo", "Kiki Amelia", "Lukman Hakim", "Maya Sofa", "Noval Zaki", "Olivia Tan", "Putra Wijaya", "Rian Ardiansyah", "Siti Rahma", "Taufik Hidayat", "Vina Pandu", "Yusuf Mansur"];
+            const heroes = [{ title: 'Knight', icon: '🛡️' }, { title: 'Mage', icon: '🔮' }, { title: 'Archer', icon: '🏹' }, { title: 'Paladin', icon: '⚔️' }];
+
+            for (let i = 0; i < count; i++) {
+                if (state.roster.length >= 40) break; // Max 40 Students
+                const botIndex = state.roster.length + 1;
+                const heroChoice = heroes[i % heroes.length];
+                const botObj = {
+                    id: 'bot_' + Math.random().toString(36).substr(2, 6),
+                    name: botNames[(botIndex - 1) % botNames.length],
+                    absen: botIndex.toString().padStart(2, '0'),
+                    hero: heroChoice.title,
+                    heroIcon: heroChoice.icon,
+                    score: Math.floor(Math.random() * 15),
+                    correctCount: Math.min(10, Math.floor(Math.random() * 8) + 1),
+                    wrongCount: Math.floor(Math.random() * 3),
+                    finished: false,
+                    isBot: true
+                };
+                state.roster.push(botObj);
+            }
+
+            renderLobbyRoster();
+            renderTeacherLeaderboard();
+            broadcastState();
+            sfx.playTick();
+
+            // Start Bot Progress Interval Loop
+            if (!window.botInterval) {
+                window.botInterval = setInterval(simulateBotTick, 3500);
+            }
+        }
+
+        function simulateBotTick() {
+            let updated = false;
+            state.roster.forEach(st => {
+                if (st.isBot && !st.finished && st.correctCount < 10) {
+                    if (Math.random() > 0.4) {
+                        st.correctCount = Math.min(10, st.correctCount + 1);
+                        st.score += 3;
+                        if (st.correctCount >= 10) {
+                            st.finished = true;
+                            st.finishTime = Date.now();
+                        }
+                    } else {
+                        st.wrongCount += 1;
+                        st.score = Math.max(0, st.score - 1);
+                    }
+                    updated = true;
+                }
+            });
+            if (updated) {
+                renderLobbyRoster();
+                renderTeacherLeaderboard();
+            }
+        }
+
+        function renderLobbyRoster() {
+            const listContainer = document.getElementById('lobby-roster-list');
+            const countText = document.getElementById('lobby-count-text');
+            const teacherCount = document.getElementById('teacher-online-count');
+            
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+
+            state.roster.forEach(s => {
+                const badge = document.createElement('div');
+                badge.className = "bg-slate-900 border border-slate-800 px-2.5 py-1 rounded-xl text-xs flex items-center gap-1.5 text-slate-200 shadow";
+                badge.innerHTML = `<span>${s.heroIcon}</span> <span class="font-bold">${s.name}</span> <span class="text-[10px] text-amber-400">#${s.absen}</span>`;
+                listContainer.appendChild(badge);
+            });
+
+            const total = state.roster.length;
+            if (countText) countText.innerText = `${total} / 40 Siswa`;
+            if (teacherCount) teacherCount.innerText = `${total} Siswa`;
+        }
+
+        // 5. TEACHER LEADERBOARD & CONTROL LOGIC
+        function renderTeacherLeaderboard() {
+            const tbody = document.getElementById('teacher-leaderboard-tbody');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            // Sort: Finished first, then highest score, then lowest wrong
+            const sorted = [...state.roster].sort((a,b) => {
+                if (b.finished !== a.finished) return b.finished ? 1 : -1;
+                if (b.score !== a.score) return b.score - a.score;
+                return a.wrongCount - b.wrongCount;
+            });
+
+            sorted.forEach((st, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = st.id === state.student.id ? "bg-amber-500/10 hover:bg-amber-500/20" : "hover:bg-slate-950/60";
+
+                const pct = Math.min(100, (st.correctCount / 10) * 100);
+                const statusBadge = st.finished 
+                    ? `<span class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full text-[10px] font-bold"><i class="fa-solid fa-check mr-1"></i> Selesai 🏆</span>`
+                    : `<span class="bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 px-2 py-0.5 rounded-full text-[10px] font-bold animate-pulse"><i class="fa-solid fa-bolt mr-1"></i> Bertanding</span>`;
+
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-bold text-amber-400">#${idx + 1}</td>
+                    <td class="p-3 font-mono text-slate-400">${st.absen}</td>
+                    <td class="p-3 font-bold text-slate-100 flex items-center gap-2">
+                        <span class="text-base">${st.heroIcon}</span>
+                        <span>${st.name}</span>
+                    </td>
+                    <td class="p-3">
+                        <div class="w-32 bg-slate-950 rounded-full h-2.5 overflow-hidden border border-slate-800">
+                            <div class="bg-gradient-to-r from-amber-500 to-yellow-300 h-full" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 font-mono mt-0.5 block">${st.correctCount}/10 Benar</span>
+                    </td>
+                    <td class="p-3 font-mono text-rose-400">${st.wrongCount}x</td>
+                    <td class="p-3 font-mono font-bold text-amber-300 text-sm">${st.score} Poin</td>
+                    <td class="p-3">${statusBadge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function toggleTeacherAntiLeak() {
+            state.antiLeakEnabled = !state.antiLeakEnabled;
+            const btn = document.getElementById('btn-anti-leak');
+            const landingText = document.getElementById('landing-anti-leak-state');
+
+            if (state.antiLeakEnabled) {
+                btn.className = "px-3.5 py-2 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5";
+                btn.innerHTML = `<i class="fa-solid fa-eye"></i> Pembahasan Live: AKTIF`;
+                if (landingText) landingText.innerText = "AKTIF (Siswa Bisa Baca Pembahasan)";
+            } else {
+                btn.className = "px-3.5 py-2 bg-amber-500/10 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-xl transition flex items-center gap-1.5";
+                btn.innerHTML = `<i class="fa-solid fa-eye-slash"></i> Pembahasan Live: NONAKTIF`;
+                if (landingText) landingText.innerText = "NONAKTIF (Anti-Contek)";
+            }
+            sfx.playTick();
+            broadcastState();
+        }
+
+        function filterTeacherTopic(topicKey) {
+            state.teacherTopicFilter = topicKey;
+            document.querySelectorAll('.topic-filter-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('bg-slate-800', 'text-slate-400');
+            });
+            const activeBtn = document.getElementById(`filter-topic-${topicKey}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-indigo-600', 'text-white');
+                activeBtn.classList.remove('bg-slate-800', 'text-slate-400');
+            }
+            sfx.playTick();
+        }
+
+        function resetMatchSession() {
+            state.roster.forEach(s => {
+                s.score = 0;
+                s.correctCount = 0;
+                s.wrongCount = 0;
+                s.finished = false;
+            });
+            renderTeacherLeaderboard();
+            renderLobbyRoster();
+            broadcastState();
+            sfx.playTick();
+        }
+
+        function exportResultsCSV() {
+            let csvContent = "data:text/csv;charset=utf-8,Peringkat,Absen,Nama Siswa,Hero,Benar,Salah,Total Poin,Status\n";
+            const sorted = [...state.roster].sort((a,b) => (b.finished - a.finished) || (b.score - a.score));
+            
+            sorted.forEach((st, idx) => {
+                csvContent += `${idx + 1},${st.absen},"${st.name}",${st.hero},${st.correctCount},${st.wrongCount},${st.score},${st.finished ? 'Selesai' : 'Bertanding'}\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Rekap_Nilai_Fisika11_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // 6. ANIMATED HTML5 2D ARENA CANVAS ENGINE
+        let canvas, ctx;
+        function initArenaCanvas() {
+            canvas = document.getElementById('arena-canvas');
+            if (!canvas) return;
+            ctx = canvas.getContext('2d');
+            resizeArenaCanvas();
+            window.addEventListener('resize', resizeArenaCanvas);
+            requestAnimationFrame(drawArenaLoop);
+        }
+
+        function resizeArenaCanvas() {
+            if (!canvas || !canvas.parentElement) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        function drawArenaLoop() {
+            if (state.currentView === 'teacher' && ctx) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Background Track Lanes
+                const startX = 60;
+                const endX = canvas.width - 100;
+                const trackWidth = endX - startX;
+                const maxDisplay = Math.min(40, state.roster.length || 1);
+                const laneHeight = canvas.height / (maxDisplay + 1);
+
+                // Draw Altar of Knowledge on Right Side
+                ctx.fillStyle = "rgba(245, 158, 11, 0.15)";
+                ctx.strokeStyle = "#f59e0b";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(endX + 40, canvas.height / 2, 55, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = "#fbbf24";
+                ctx.font = "bold 22px Cinzel, serif";
+                ctx.textAlign = "center";
+                ctx.fillText("ALTAR ILMU", endX + 40, canvas.height / 2 + 6);
+
+                // Draw Track Lines & Student Avatars
+                state.roster.slice(0, 40).forEach((st, idx) => {
+                    const y = (idx + 1) * laneHeight;
+                    
+                    // Lane line
+                    ctx.strokeStyle = "rgba(55, 65, 81, 0.4)";
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(startX, y);
+                    ctx.lineTo(endX, y);
+                    ctx.stroke();
+
+                    // Calculate position based on 0-10 correct count
+                    const progressRatio = Math.min(1.0, st.correctCount / 10);
+                    const heroX = startX + (progressRatio * trackWidth);
+
+                    // Hero Icon
+                    ctx.font = "20px sans-serif";
+                    ctx.textAlign = "center";
+                    ctx.fillText(st.heroIcon, heroX, y + 6);
+
+                    // Name Tag
+                    ctx.fillStyle = st.id === state.student.id ? "#f59e0b" : "#9ca3af";
+                    ctx.font = "10px Plus Jakarta Sans, sans-serif";
+                    ctx.fillText(`#${st.absen} ${st.name.split(' ')[0]} (${st.score}p)`, heroX, y - 10);
+                });
+            }
+            requestAnimationFrame(drawArenaLoop);
+        }
+
+        // 7. BANK SOAL RENDERER (41 QUESTIONS)
+        function renderBankQuestions() {
+            const container = document.getElementById('bank-questions-container');
+            if (!container) return;
+
+            const searchKey = (document.getElementById('bank-search-input')?.value || '').toLowerCase();
+            const categoryFilter = document.getElementById('bank-category-select')?.value || 'ALL';
+
+            container.innerHTML = '';
+
+            const filtered = PHYSICS_QUESTION_BANK.filter(q => {
+                const matchCat = (categoryFilter === 'ALL' || q.category === categoryFilter);
+                const matchSearch = q.question.toLowerCase().includes(searchKey) || q.explanation.toLowerCase().includes(searchKey) || q.id.toLowerCase().includes(searchKey);
+                return matchCat && matchSearch;
+            });
+
+            filtered.forEach((q, idx) => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 hover:border-amber-500/40 rounded-3xl p-5 space-y-4 shadow-xl transition";
+
+                const optsHTML = q.options.map((opt, oIdx) => `
+                    <div class="px-3 py-2 rounded-xl text-xs font-medium ${oIdx === q.answer ? 'bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 font-bold' : 'bg-slate-950 border border-slate-800 text-slate-300'}">
+                        ${opt} ${oIdx === q.answer ? '<span class="text-[10px] text-emerald-400 font-extrabold ml-1">(Kunci Jawaban)</span>' : ''}
+                    </div>
+                `).join('');
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[11px] font-bold px-3 py-0.5 rounded-full">
+                            ${q.category}
+                        </span>
+                        <span class="text-xs font-mono text-slate-500">ID: ${q.id}</span>
+                    </div>
+
+                    <div class="text-slate-100 font-medium text-sm leading-relaxed">
+                        ${q.question}
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        ${optsHTML}
+                    </div>
+
+                    <div class="bg-slate-950 p-3.5 rounded-2xl border border-slate-800/80 text-xs text-slate-300 space-y-1">
+                        <div class="font-bold text-amber-400 flex items-center gap-1">
+                            <i class="fa-solid fa-square-root-variable"></i> Pembahasan Rumus Lengkap:
+                        </div>
+                        <div class="font-mono text-slate-300 leading-relaxed">
+                            ${q.explanation}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                window.MathJax.typesetPromise();
+            }
+        }
+
+        // 8. REAL-TIME BROADCAST SYNC (FIRESTORE + BROADCASTCHANNEL)
+        function broadcastState() {
+            try {
+                if (window.channel) {
+                    window.channel.postMessage({
+                        type: 'SYNC_STATE',
+                        roster: state.roster,
+                        antiLeak: state.antiLeakEnabled,
+                        roomCode: state.roomCode
+                    });
+                }
+            } catch(e) {}
+        }
+
+        function handleSyncMessage(data) {
+            if (data && data.type === 'SYNC_STATE') {
+                if (data.roster) {
+                    // Merge incoming roster
+                    data.roster.forEach(remoteStudent => {
+                        const idx = state.roster.findIndex(s => s.id === remoteStudent.id);
+                        if (idx !== -1) {
+                            if (remoteStudent.id !== state.student.id) {
+                                state.roster[idx] = remoteStudent;
+                            }
+                        } else {
+                            state.roster.push(remoteStudent);
+                        }
+                    });
+                }
+                state.antiLeakEnabled = data.antiLeak;
+                renderLobbyRoster();
+                renderTeacherLeaderboard();
+            }
+        }
+    </script>
+</body>
+</html>
