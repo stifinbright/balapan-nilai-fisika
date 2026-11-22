@@ -72,6 +72,12 @@
       height: 100%;
       touch-action: none;
     }
+    /* Inline MathJax styling so formulas stay aligned with text */
+    mjx-container[jax="SVG"] {
+      display: inline-flex !important;
+      vertical-align: middle;
+      margin: 0 2px;
+    }
     /* Custom scrollbar */
     ::-webkit-scrollbar {
       width: 6px;
@@ -255,6 +261,11 @@
         <!-- Question Body -->
         <div id="quizQuestionText" class="text-base sm:text-lg font-medium text-slate-100 leading-relaxed">
           Memuat pertanyaan...
+        </div>
+
+        <!-- Physics Diagram Illustration Box -->
+        <div id="quizDiagramContainer" class="hidden w-full bg-slate-950/90 border border-slate-800 rounded-2xl p-4 flex flex-col items-center justify-center">
+          <!-- SVG Diagram rendered dynamically -->
         </div>
 
         <!-- Answer Choices -->
@@ -575,6 +586,7 @@
       {
         id: 1,
         category: "Fluida Dinamis",
+        diagram: "pipa_bertingkat",
         question: "Pipa bertingkat memiliki perbandingan luas penampang $A_1 : A_2 = 4 : 1$. Jika kecepatan aliran air pada pipa besar adalah $v_1 = 36\\text{ km/jam}$ ($10\\text{ m/s}$), berapakah kecepatan air pada pipa kecil ($v_2$)?",
         options: ["20 m/s", "30 m/s", "40 m/s", "50 m/s"],
         answer: 2,
@@ -583,14 +595,16 @@
       {
         id: 2,
         category: "Fluida Dinamis",
+        diagram: "pipa_bertingkat",
         question: "Pada pipa bertingkat ($h_1 = 5\\text{ m}$, $h_2 = 1\\text{ m}$, $v_1 = 10\\text{ m/s}$, $v_2 = 40\\text{ m/s}$, $P_1 = 9,1 \\times 10^5\\text{ Pa}$, $\\rho_{\\text{air}} = 1000\\text{ kg/m}^3$, $g = 10\\text{ m/s}^2$), berapakah tekanan air pada pipa kecil ($P_2$)?",
-        options: ["1,5 x 10^5 Pa", "2,0 x 10^5 Pa", "2,5 x 10^5 Pa", "7,1 x 10^5 Pa"],
+        options: ["$1,5 \\times 10^5\\text{ Pa}$", "$2,0 \\times 10^5\\text{ Pa}$", "$2,5 \\times 10^5\\text{ Pa}$", "$7,1 \\times 10^5\\text{ Pa}$"],
         answer: 1,
         explanation: "Hukum Bernoulli: $P_1 + \\frac{1}{2}\\rho v_1^2 + \\rho g h_1 = P_2 + \\frac{1}{2}\\rho v_2^2 + \\rho g h_2 \\implies 910.000 + 50.000 + 50.000 = P_2 + 800.000 + 10.000 \\implies P_2 = 200.000\\text{ Pa} = 2,0 \\times 10^5\\text{ Pa}$."
       },
       {
         id: 3,
         category: "Fluida Dinamis",
+        diagram: "pipa_menyempit",
         question: "Sebuah pipa memiliki bagian besar berdiameter dua kali diameter bagian kecil ($d_1 = 2d_2$). Jika kecepatan aliran pada pipa besar $v_1 = 4\\text{ m/s}$, berapakah kecepatan aliran pada pipa kecil ($v_2$)?",
         options: ["8 m/s", "12 m/s", "16 m/s", "20 m/s"],
         answer: 2,
@@ -599,6 +613,7 @@
       {
         id: 4,
         category: "Fluida Dinamis",
+        diagram: "venturimeter",
         question: "Venturimeter tanpa manometer memiliki luas penampang $A_1 = 5\\text{ cm}^2$ dan $A_2 = 4\\text{ cm}^2$. Jika selisih tinggi permukaan air pada kedua pipa vertikal $\\Delta h = 45\\text{ cm}$ ($g = 10\\text{ m/s}^2$), berapakah kecepatan air pada penampang besar ($v_1$)?",
         options: ["2 m/s", "3 m/s", "4 m/s", "5 m/s"],
         answer: 2,
@@ -607,6 +622,7 @@
       {
         id: 5,
         category: "Fluida Dinamis",
+        diagram: "venturimeter",
         question: "Air mengalir pada pipa horizontal yang dilengkapi dua pipa vertikal dengan $A_1 = 5\\text{ cm}^2$ dan $A_2 = 3\\text{ cm}^2$. Jika selisih ketinggian air $\\Delta h = 20\\text{ cm}$, berapakah kecepatan air pada pipa besar ($v_1$)?",
         options: ["1,0 m/s", "1,5 m/s", "2,0 m/s", "2,5 m/s"],
         answer: 1,
@@ -615,6 +631,7 @@
       {
         id: 6,
         category: "Fluida Dinamis",
+        diagram: "venturimeter",
         question: "Berdasarkan pipa horizontal dengan $A_1 = 5\\text{ cm}^2$, $A_2 = 3\\text{ cm}^2$, dan $v_1 = 1,5\\text{ m/s}$, berapakah kecepatan aliran air pada pipa kecil ($v_2$)?",
         options: ["1,5 m/s", "2,0 m/s", "2,5 m/s", "3,0 m/s"],
         answer: 2,
@@ -625,6 +642,7 @@
       {
         id: 7,
         category: "Fluida Statis",
+        diagram: "bejana_berlapis",
         question: "Sebuah bejana berisi air ($\\rho_1 = 1000\\text{ kg/m}^3$, $h_1 = 0,4\\text{ m}$) dan lapisan minyak di atasnya ($\\rho_2 = 800\\text{ kg/m}^3$, $h_2 = 0,25\\text{ m}$). Jika $g = 10\\text{ m/s}^2$, berapakah tekanan hidrostatis total di dasar bejana?",
         options: ["4.000 Pa", "5.000 Pa", "6.000 Pa", "7.000 Pa"],
         answer: 2,
@@ -641,14 +659,16 @@
       {
         id: 9,
         category: "Fluida Statis",
+        diagram: "pipa_u",
         question: "Pada pipa U berisi air ($\\rho_{\\text{air}} = 1000\\text{ kg/m}^3$), minyak jenis baru ditambahkan setinggi $h_m = 5\\text{ cm}$ sehingga selisih tinggi kolom air tetap $\\Delta h = 8\\text{ cm}$. Berapakah massa jenis minyak baru tersebut?",
-        options: ["1.200 kg/m^3", "1.400 kg/m^3", "1.600 kg/m^3", "1.800 kg/m^3"],
+        options: ["$1.200\\text{ kg/m}^3$", "$1.400\\text{ kg/m}^3$", "$1.600\\text{ kg/m}^3$", "$1.800\\text{ kg/m}^3$"],
         answer: 2,
         explanation: "Hukum Pokok Hidrostatika: $\\rho_m h_m = \\rho_{\\text{air}} h_{\\text{air}} \\implies \\rho_m (5) = 1000 (8) \\implies \\rho_m = 1.600\\text{ kg/m}^3$."
       },
       {
         id: 10,
         category: "Fluida Statis",
+        diagram: "pipa_u_setimbang",
         question: "Pada sistem pipa U setimbang yang kedua permukaan atas zat cair Z dan minyak berada pada posisi $+15\\text{ cm}$ dari garis kesetimbangan awal, berapakah selisih akhir ketinggian permukaan kedua cairan tersebut?",
         options: ["0 cm", "5 cm", "10 cm", "15 cm"],
         answer: 0,
@@ -657,6 +677,7 @@
       {
         id: 11,
         category: "Fluida Statis",
+        diagram: "dongkrak_hidrolik",
         question: "Dongkrak hidrolik memiliki jari-jari piston kecil $r_1 = 2\\text{ cm}$ dan piston besar $r_2 = 10\\text{ cm}$. Jika piston kecil ditekan dengan gaya $F_1 = 150\\text{ N}$, berapakah beban maksimum yang dapat diangkat piston besar?",
         options: ["1.500 N", "2.500 N", "3.750 N", "4.500 N"],
         answer: 2,
@@ -665,6 +686,7 @@
       {
         id: 12,
         category: "Fluida Statis",
+        diagram: "dongkrak_hidrolik",
         question: "Sebuah dongkrak hidrolik memiliki perbandingan luas penampang $A_1 : A_2 = 1 : 25$. Berapakah gaya minimal pada piston kecil untuk mengangkat mobil seberat $5.000\\text{ N}$?",
         options: ["100 N", "150 N", "200 N", "250 N"],
         answer: 2,
@@ -673,6 +695,7 @@
       {
         id: 13,
         category: "Fluida Statis",
+        diagram: "archimedes_tenggelam",
         question: "Sebuah benda bermassa jenis $\\rho_b = 0,75\\text{ g/cm}^3$ dan bervolume $V = 400\\text{ cm}^3$ dicelupkan seluruhnya ke dalam air ($\\rho_{\\text{air}} = 1\\text{ g/cm}^3$, $g = 10\\text{ m/s}^2$). Berapakah gaya Archimedes yang dialami benda saat ditahan di dalam air?",
         options: ["2 N", "3 N", "4 N", "5 N"],
         answer: 2,
@@ -681,14 +704,16 @@
       {
         id: 14,
         category: "Fluida Statis",
+        diagram: "archimedes_neraca",
         question: "Sebuah benda memiliki berat di udara $w_u = 50\\text{ N}$ dan berat di dalam minyak ($\\rho_m = 800\\text{ kg/m}^3$) sebesar $w_m = 42\\text{ N}$. Jika $g = 10\\text{ m/s}^2$, berapakah volume benda tersebut?",
-        options: ["0,5 x 10^-3 m^3", "1,0 x 10^-3 m^3", "1,5 x 10^-3 m^3", "2,0 x 10^-3 m^3"],
+        options: ["$0,5 \\times 10^{-3}\\text{ m}^3$", "$1,0 \\times 10^{-3}\\text{ m}^3$", "$1,5 \\times 10^{-3}\\text{ m}^3$", "$2,0 \\times 10^{-3}\\text{ m}^3$"],
         answer: 1,
         explanation: "$F_A = w_u - w_m = 50 - 42 = 8\\text{ N}$. Volume $V = \\frac{F_A}{\\rho_m g} = \\frac{8}{800 \\times 10} = 10^{-3}\\text{ m}^3$ (1 liter)."
       },
       {
         id: 15,
         category: "Fluida Statis",
+        diagram: "archimedes_terapung",
         question: "Sebuah bola terapung pada permukaan zat cair dengan $\\frac{1}{4}$ bagian volumenya muncul di atas permukaan. Perbandingan massa jenis bola terhadap massa jenis zat cair adalah...",
         options: ["1 : 4", "1 : 2", "3 : 4", "4 : 3"],
         answer: 2,
@@ -697,8 +722,9 @@
       {
         id: 16,
         category: "Fluida Statis",
+        diagram: "archimedes_terapung",
         question: "Balok kayu bermassa jenis $\\rho_k = 0,6\\text{ g/cm}^3$ dengan volume total $500\\text{ cm}^3$ dimasukkan ke dalam air ($\\rho_{\\text{air}} = 1\\text{ g/cm}^3$). Berapakah volume balok kayu yang tenggelam di bawah air?",
-        options: ["200 cm^3", "250 cm^3", "300 cm^3", "350 cm^3"],
+        options: ["$200\\text{ cm}^3$", "$250\\text{ cm}^3$", "$300\\text{ cm}^3$", "$350\\text{ cm}^3$"],
         answer: 2,
         explanation: "$V_{\\text{celup}} = \\left(\\frac{\\rho_k}{\\rho_{\\text{air}}}\\right) V = \\left(\\frac{0,6}{1,0}\\right) \\times 500 = 300\\text{ cm}^3$."
       },
@@ -715,14 +741,16 @@
       {
         id: 18,
         category: "Impuls dan Momentum",
+        diagram: "pantulan_dinding",
         question: "Bola bermassa $0,2\\text{ kg}$ bergerak ke kanan dengan kecepatan $10\\text{ m/s}$, lalu dipukul hingga berbalik arah ke kiri dengan kecepatan $8\\text{ m/s}$ ($v_2 = -8\\text{ m/s}$). Besar impuls yang bekerja pada bola adalah...",
-        options: ["1,8 N.s", "2,4 N.s", "3,6 N.s", "4,2 N.s"],
+        options: ["$1,8\\text{ N}\\cdot\\text{s}$", "$2,4\\text{ N}\\cdot\\text{s}$", "$3,6\\text{ N}\\cdot\\text{s}$", "$4,2\\text{ N}\\cdot\\text{s}$"],
         answer: 2,
         explanation: "$I = m(v_2 - v_1) = 0,2(-8 - 10) = -3,6\\text{ N}\\cdot\\text{s}$ (besar impuls $3,6\\text{ N}\\cdot\\text{s}$)."
       },
       {
         id: 19,
         category: "Impuls dan Momentum",
+        diagram: "tumbukan_dua_benda",
         question: "Benda A ($m_A = 2\\text{ kg}$, $v_A = 6\\text{ m/s}$) menumbuk benda B ($m_B = 3\\text{ kg}$, diam) secara lenting sempurna. Kecepatan benda A sesaat setelah tumbukan adalah...",
         options: ["-1,2 m/s", "0 m/s", "+1,2 m/s", "+2,4 m/s"],
         answer: 0,
@@ -732,15 +760,16 @@
         id: 20,
         category: "Impuls dan Momentum",
         question: "Gaya konstan $F = 10\\text{ N}$ bekerja pada benda bermassa $0,5\\text{ kg}$ yang awalnya diam selama $\\Delta t = 2\\text{ s}$. Impuls dan perubahan kecepatan benda berturut-turut adalah...",
-        options: ["I = 10 N.s, dv = 20 m/s", "I = 15 N.s, dv = 30 m/s", "I = 20 N.s, dv = 40 m/s", "I = 25 N.s, dv = 50 m/s"],
+        options: ["$I = 10\\text{ N}\\cdot\\text{s}, \\Delta v = 20\\text{ m/s}$", "$I = 15\\text{ N}\\cdot\\text{s}, \\Delta v = 30\\text{ m/s}$", "$I = 20\\text{ N}\\cdot\\text{s}, \\Delta v = 40\\text{ m/s}$", "$I = 25\\text{ N}\\cdot\\text{s}, \\Delta v = 50\\text{ m/s}$"],
         answer: 2,
         explanation: "$I = F\\Delta t = 10 \\times 2 = 20\\text{ N}\\cdot\\text{s}$, dan $\\Delta v = \\frac{I}{m} = \\frac{20}{0,5} = 40\\text{ m/s}$."
       },
       {
         id: 21,
         category: "Impuls dan Momentum",
+        diagram: "bola_memantul",
         question: "Bola bermassa $0,3\\text{ kg}$ jatuh mengenai lantai dengan kecepatan $v_1 = -5\\text{ m/s}$ dan memantul tegak lurus ke atas dengan kecepatan $v_2 = +5\\text{ m/s}$. Impuls yang diberikan lantai pada bola adalah...",
-        options: ["+1,5 N.s", "+3,0 N.s", "+4,5 N.s", "+6,0 N.s"],
+        options: ["$+1,5\\text{ N}\\cdot\\text{s}$", "$+3,0\\text{ N}\\cdot\\text{s}$", "$+4,5\\text{ N}\\cdot\\text{s}$", "$+6,0\\text{ N}\\cdot\\text{s}$"],
         answer: 1,
         explanation: "$I = m(v_2 - v_1) = 0,3(5 - (-5)) = 0,3 \\times 10 = +3,0\\text{ N}\\cdot\\text{s}$ (ke atas)."
       },
@@ -755,6 +784,7 @@
       {
         id: 23,
         category: "Impuls dan Momentum",
+        diagram: "tumbukan_dua_benda",
         question: "Benda $m_1 = 2\\text{ kg}$ bergerak dengan kecepatan $4\\text{ m/s}$ menumbuk benda $m_2 = 3\\text{ kg}$ yang diam. Jika tumbukan tidak lenting sama sekali, kecepatan kedua benda setelah tumbukan adalah...",
         options: ["1,0 m/s", "1,2 m/s", "1,6 m/s", "2,0 m/s"],
         answer: 2,
@@ -771,8 +801,9 @@
       {
         id: 25,
         category: "Impuls dan Momentum",
+        diagram: "pantulan_dinding",
         question: "Bola bermassa $0,5\\text{ kg}$ bergerak dengan kecepatan $12\\text{ m/s}$ menumbuk dinding tegak lurus dan memantul kembali dengan kecepatan $-10\\text{ m/s}$. Impuls gaya pengereman dinding adalah...",
-        options: ["-7 N.s", "-9 N.s", "-11 N.s", "-13 N.s"],
+        options: ["$-7\\text{ N}\\cdot\\text{s}$", "$-9\\text{ N}\\cdot\\text{s}$", "$-11\\text{ N}\\cdot\\text{s}$", "$-13\\text{ N}\\cdot\\text{s}$"],
         answer: 2,
         explanation: "$I = m(v_2 - v_1) = 0,5(-10 - 12) = 0,5(-22) = -11\\text{ N}\\cdot\\text{s}$."
       },
@@ -780,15 +811,16 @@
         id: 26,
         category: "Impuls dan Momentum",
         question: "Benda bermassa $0,4\\text{ kg}$ mengalami perubahan kecepatan dari $5\\text{ m/s}$ menjadi $9\\text{ m/s}$. Berapakah besar perubahan momentumnya?",
-        options: ["1,2 kg.m/s", "1,6 kg.m/s", "2,0 kg.m/s", "2,4 kg.m/s"],
+        options: ["$1,2\\text{ kg}\\cdot\\text{m/s}$", "$1,6\\text{ kg}\\cdot\\text{m/s}$", "$2,0\\text{ kg}\\cdot\\text{m/s}$", "$2,4\\text{ kg}\\cdot\\text{m/s}$"],
         answer: 1,
         explanation: "$\\Delta p = m(v_2 - v_1) = 0,4(9 - 5) = 1,6\\text{ kg}\\cdot\\text{m/s}$."
       },
       {
         id: 27,
         category: "Impuls dan Momentum",
+        diagram: "pantulan_dinding",
         question: "Bola bermassa $0,25\\text{ kg}$ bergerak dengan $v_1 = 4\\text{ m/s}$ lalu dipukul balik menjadi $v_2 = -3\\text{ m/s}$. Selisih momentum akhir dan awal (impuls) adalah...",
-        options: ["-1,25 N.s", "-1,50 N.s", "-1,75 N.s", "-2,00 N.s"],
+        options: ["$-1,25\\text{ N}\\cdot\\text{s}$", "$-1,50\\text{ N}\\cdot\\text{s}$", "$-1,75\\text{ N}\\cdot\\text{s}$", "$-2,00\\text{ N}\\cdot\\text{s}$"],
         answer: 2,
         explanation: "$I = \\Delta p = 0,25(-3 - 4) = 0,25(-7) = -1,75\\text{ N}\\cdot\\text{s}$."
       },
@@ -796,7 +828,7 @@
         id: 28,
         category: "Impuls dan Momentum",
         question: "Sebuah benda bermassa $10\\text{ kg}$ mengalami perubahan kecepatan dari $2\\text{ m/s}$ menjadi $5\\text{ m/s}$. Perubahan momentum benda tersebut adalah...",
-        options: ["15 kg.m/s", "20 kg.m/s", "30 kg.m/s", "45 kg.m/s"],
+        options: ["$15\\text{ kg}\\cdot\\text{m/s}$", "$20\\text{ kg}\\cdot\\text{m/s}$", "$30\\text{ kg}\\cdot\\text{m/s}$", "$45\\text{ kg}\\cdot\\text{m/s}$"],
         answer: 2,
         explanation: "$\\Delta p = m \\Delta v = 10 \\times (5 - 2) = 30\\text{ kg}\\cdot\\text{m/s}$."
       },
@@ -812,7 +844,7 @@
         id: 30,
         category: "Impuls dan Momentum",
         question: "Mobil bermassa $1.000\\text{ kg}$ melaju dengan kecepatan $25\\text{ m/s}$ direm mendadak hingga berhenti total. Perubahan momentum mobil adalah...",
-        options: ["+25.000 kg.m/s", "-25.000 kg.m/s", "-12.500 kg.m/s", "+12.500 kg.m/s"],
+        options: ["$+25.000\\text{ kg}\\cdot\\text{m/s}$", "$-25.000\\text{ kg}\\cdot\\text{m/s}$", "$-12.500\\text{ kg}\\cdot\\text{m/s}$", "$+12.500\\text{ kg}\\cdot\\text{m/s}$"],
         answer: 1,
         explanation: "$\\Delta p = m(v_2 - v_1) = 1000(0 - 25) = -25.000\\text{ kg}\\cdot\\text{m/s}$."
       },
@@ -829,6 +861,7 @@
       {
         id: 32,
         category: "TKA Fisika SMA",
+        diagram: "tumbukan_dua_benda",
         question: "Troli $m_1 = 2\\text{ kg}$ bergerak $5\\text{ m/s}$ menumbuk troli $m_2 = 2\\text{ kg}$ yang diam secara tidak lenting sama sekali. Kecepatan gabungan kedua troli setelah tumbukan adalah...",
         options: ["1,5 m/s", "2,0 m/s", "2,5 m/s", "3,0 m/s"],
         answer: 2,
@@ -837,6 +870,7 @@
       {
         id: 33,
         category: "TKA Fisika SMA",
+        diagram: "pantulan_dinding",
         question: "Bola bermassa $0,1\\text{ kg}$ dilempar dengan kecepatan $20\\text{ m/s}$ dan dipukul balik hingga $v_2 = -30\\text{ m/s}$. Jika waktu kontak $0,005\\text{ s}$, berapakah gaya rata-rata pemukul?",
         options: ["500 N", "800 N", "1.000 N", "1.200 N"],
         answer: 2,
@@ -854,13 +888,14 @@
         id: 35,
         category: "TKA Fisika SMA",
         question: "Roket menyemburkan gas dengan laju $10\\text{ kg/s}$ dan kecepatan semburan $2.000\\text{ m/s}$. Jika massa roket $100\\text{ kg}$, berapakah percepatan awal roket?",
-        options: ["100 m/s^2", "150 m/s^2", "200 m/s^2", "250 m/s^2"],
+        options: ["$100\\text{ m/s}^2$", "$150\\text{ m/s}^2$", "$200\\text{ m/s}^2$", "$250\\text{ m/s}^2$"],
         answer: 2,
         explanation: "$F = \\frac{\\Delta m}{\\Delta t} v = 10 \\times 2000 = 20.000\\text{ N}$. Percepatan $a = \\frac{F}{m} = \\frac{20.000}{100} = 200\\text{ m/s}^2$."
       },
       {
         id: 36,
         category: "TKA Fisika SMA",
+        diagram: "tumbukan_dua_benda",
         question: "Dua benda $m_1 = 3\\text{ kg}$ ($v_1 = 4\\text{ m/s}$) dan $m_2 = 4,5\\text{ kg}$ ($v_2 = 0$) bertumbukan tidak lenting sama sekali. Kecepatan kedua benda sesaat setelah tumbukan adalah...",
         options: ["1,2 m/s", "1,4 m/s", "1,6 m/s", "1,8 m/s"],
         answer: 2,
@@ -869,6 +904,7 @@
       {
         id: 37,
         category: "TKA Fisika SMA",
+        diagram: "bola_memantul",
         question: "Sebuah bola dijatuhkan bebas dari ketinggian $h_1 = 5\\text{ m}$ dan memantul kembali setinggi $h_2 = 3,2\\text{ m}$. Berapakah koefisien restitusi ($e$) lantai tersebut?",
         options: ["0,5", "0,6", "0,7", "0,8"],
         answer: 3,
@@ -877,6 +913,7 @@
       {
         id: 38,
         category: "TKA Fisika SMA",
+        diagram: "ayunan_balistik",
         question: "Peluru $m = 0,02\\text{ kg}$ bergerak $400\\text{ m/s}$ bersarang di dalam balok diam bermassa $1,98\\text{ kg}$. Kecepatan balok dan peluru setelah tumbukan adalah...",
         options: ["2 m/s", "3 m/s", "4 m/s", "5 m/s"],
         answer: 2,
@@ -885,15 +922,16 @@
       {
         id: 39,
         category: "TKA Fisika SMA",
+        diagram: "bidang_miring",
         question: "Benda $m = 2\\text{ kg}$ diberi impuls $40\\text{ N}\\cdot\\text{s}$ hingga meluncur naik pada bidang miring licin ($g = 10\\text{ m/s}^2$). Kelajuan benda di ketinggian $h = 20\\text{ m}$ adalah...",
-        options: ["10 m/s", "15 m/s", "20 akar 2 m/s", "0 m/s (tepat berhenti di puncak)"],
+        options: ["10 m/s", "15 m/s", "$20\\sqrt{2}\\text{ m/s}$", "0 m/s (tepat berhenti di puncak)"],
         answer: 3,
         explanation: "Kecepatan awal $v_0 = I/m = 40/2 = 20\\text{ m/s}$. Tinggi maksimum $h_{\\text{maks}} = \\frac{v_0^2}{2g} = \\frac{400}{20} = 20\\text{ m}$ (berhenti di puncak)."
       },
       {
         id: 40,
         category: "TKA Fisika SMA",
-        question: "(Pilihan Ganda Kompleks - Airbag Mobil): Perhatikan pernyataan berikut: (1) Airbag memperlama waktu kontak tabrakan. (2) Airbag memperbesar perubahan momentum. (3) Gaya rata-rata benturan berkurang drastis. Pernyataan yang BENAR adalah...",
+        question: "<strong>Pilihan Ganda Kompleks (Airbag Mobil):</strong><br>Perhatikan pernyataan berikut:<ul class='list-disc pl-5 my-1.5 space-y-1 text-slate-300 text-sm'><li>(1) Airbag memperlama selang waktu kontak tabrakan.</li><li>(2) Airbag memperbesar perubahan momentum pengemudi.</li><li>(3) Gaya rata-rata benturan berkurang drastis sehingga pengemudi terlindungi.</li></ul>Pernyataan yang <strong>BENAR</strong> adalah...",
         options: ["(1) dan (2) saja", "(1) dan (3) saja", "(2) dan (3) saja", "Semua pernyataan benar"],
         answer: 1,
         explanation: "Airbag memperpanjang selang waktu kontak ($\\Delta t$ membesar), sehingga gaya impulsif rata-rata $F = \\Delta p / \\Delta t$ berkurang drastis."
@@ -901,12 +939,201 @@
       {
         id: 41,
         category: "TKA Fisika SMA",
-        question: "(Analisis Tabrakan Frontal): (1) Momentum total sistem kekal jika tidak ada gaya luar. (2) Energi kinetik selalu kekal pada semua jenis tumbukan. (3) Pada tumbukan tidak lenting sama sekali, kedua benda menyatu setelah bertumbukan. Evaluasi yang tepat adalah...",
+        question: "<strong>Analisis Tabrakan Frontal:</strong><br>Evaluasi pernyataan berikut:<ul class='list-disc pl-5 my-1.5 space-y-1 text-slate-300 text-sm'><li>(1) Momentum total sistem kekal jika tidak ada gaya luar yang bekerja.</li><li>(2) Energi kinetik selalu kekal pada semua jenis tumbukan.</li><li>(3) Pada tumbukan tidak lenting sama sekali, kedua benda menyatu setelah bertumbukan.</li></ul>Evaluasi yang tepat adalah...",
         options: ["(1) Benar, (2) Salah, (3) Benar", "(1) Benar, (2) Benar, (3) Salah", "(1) Salah, (2) Benar, (3) Benar", "Semua pernyataan salah"],
         answer: 0,
         explanation: "Hukum kekekalan momentum berlaku umum tanpa gaya luar, namun energi kinetik hanya kekal pada tumbukan lenting sempurna ($e=1$)."
       }
     ];
+
+    /* -----------------------------------------------------------
+       1B. VECTOR SVG DIAGRAM GENERATOR FOR PHYSICS QUESTIONS
+       ----------------------------------------------------------- */
+    function getPhysicsDiagramSVG(type) {
+      if (!type) return '';
+
+      const diagrams = {
+        pipa_bertingkat: `
+          <svg viewBox="0 0 360 150" class="w-full max-w-sm h-36">
+            <line x1="20" y1="130" x2="340" y2="130" stroke="#475569" stroke-width="2" stroke-dasharray="4 4"/>
+            <path d="M 30 85 L 130 85 C 165 85, 185 35, 220 35 L 330 35 L 330 58 L 220 58 C 190 58, 170 115, 130 115 L 30 115 Z" fill="rgba(56, 189, 248, 0.2)" stroke="#38bdf8" stroke-width="2"/>
+            <line x1="65" y1="100" x2="65" y2="130" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="2 2"/>
+            <text x="52" y="122" fill="#fbbf24" font-size="10" font-weight="bold">h₁</text>
+            <line x1="285" y1="46" x2="285" y2="130" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="2 2"/>
+            <text x="292" y="95" fill="#fbbf24" font-size="10" font-weight="bold">h₂</text>
+            <line x1="45" y1="100" x2="105" y2="100" stroke="#34d399" stroke-width="2"/>
+            <polygon points="105,96 113,100 105,104" fill="#34d399"/>
+            <text x="55" y="78" fill="#e2e8f0" font-size="11" font-weight="bold">A₁, v₁, P₁</text>
+            <line x1="235" y1="46" x2="305" y2="46" stroke="#34d399" stroke-width="2"/>
+            <polygon points="305,42 313,46 305,50" fill="#34d399"/>
+            <text x="245" y="26" fill="#e2e8f0" font-size="11" font-weight="bold">A₂, v₂, P₂</text>
+          </svg>`,
+
+        pipa_menyempit: `
+          <svg viewBox="0 0 360 120" class="w-full max-w-sm h-28">
+            <path d="M 30 30 L 140 30 L 190 48 L 330 48 L 330 72 L 190 72 L 140 90 L 30 90 Z" fill="rgba(56, 189, 248, 0.2)" stroke="#38bdf8" stroke-width="2"/>
+            <line x1="55" y1="60" x2="120" y2="60" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="120,56 128,60 120,64" fill="#34d399"/>
+            <text x="65" y="22" fill="#e2e8f0" font-size="11" font-weight="bold">Pipa Besar (d₁, v₁)</text>
+            <line x1="215" y1="60" x2="295" y2="60" stroke="#fbbf24" stroke-width="2.5"/>
+            <polygon points="295,56 303,60 295,64" fill="#fbbf24"/>
+            <text x="215" y="38" fill="#fbbf24" font-size="11" font-weight="bold">Pipa Kecil (d₂, v₂)</text>
+          </svg>`,
+
+        venturimeter: `
+          <svg viewBox="0 0 360 155" class="w-full max-w-sm h-36">
+            <path d="M 25 95 L 125 95 L 160 107 L 210 107 L 245 95 L 335 95 L 335 135 L 245 135 L 210 123 L 160 123 L 125 135 L 25 135 Z" fill="rgba(56, 189, 248, 0.22)" stroke="#38bdf8" stroke-width="2"/>
+            <rect x="85" y="20" width="14" height="75" fill="rgba(56, 189, 248, 0.45)" stroke="#38bdf8" stroke-width="1.5"/>
+            <rect x="178" y="55" width="14" height="52" fill="rgba(56, 189, 248, 0.45)" stroke="#38bdf8" stroke-width="1.5"/>
+            <line x1="80" y1="20" x2="205" y2="20" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <line x1="175" y1="55" x2="205" y2="55" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <line x1="200" y1="20" x2="200" y2="55" stroke="#fbbf24" stroke-width="2"/>
+            <text x="208" y="42" fill="#fbbf24" font-size="11" font-weight="bold">Δh</text>
+            <text x="72" y="148" fill="#e2e8f0" font-size="11" font-weight="bold">A₁, v₁</text>
+            <text x="168" y="148" fill="#34d399" font-size="11" font-weight="bold">A₂, v₂</text>
+          </svg>`,
+
+        bejana_berlapis: `
+          <svg viewBox="0 0 320 150" class="w-full max-w-xs h-36">
+            <rect x="90" y="75" width="110" height="55" fill="rgba(56, 189, 248, 0.45)"/>
+            <rect x="90" y="35" width="110" height="40" fill="rgba(250, 204, 21, 0.45)"/>
+            <polyline points="90,20 90,130 200,130 200,20" fill="none" stroke="#94a3b8" stroke-width="3"/>
+            <text x="122" y="60" fill="#fef08a" font-size="11" font-weight="bold">Minyak (ρ₂)</text>
+            <text x="130" y="106" fill="#bae6fd" font-size="11" font-weight="bold">Air (ρ₁)</text>
+            <line x1="210" y1="35" x2="210" y2="75" stroke="#facc15" stroke-width="1.5"/>
+            <text x="218" y="58" fill="#facc15" font-size="10" font-weight="bold">h₂</text>
+            <line x1="210" y1="75" x2="210" y2="130" stroke="#38bdf8" stroke-width="1.5"/>
+            <text x="218" y="106" fill="#38bdf8" font-size="10" font-weight="bold">h₁</text>
+          </svg>`,
+
+        pipa_u: `
+          <svg viewBox="0 0 320 150" class="w-full max-w-xs h-36">
+            <path d="M 95 25 L 95 110 A 45 45 0 0 0 185 110 L 185 25" fill="none" stroke="#64748b" stroke-width="22"/>
+            <path d="M 95 45 L 95 110 A 45 45 0 0 0 185 110 L 185 80" fill="none" stroke="#38bdf8" stroke-width="18"/>
+            <line x1="185" y1="45" x2="185" y2="80" stroke="#facc15" stroke-width="18"/>
+            <line x1="75" y1="80" x2="205" y2="80" stroke="#f87171" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <text x="25" y="66" fill="#38bdf8" font-size="10" font-weight="bold">Air (Δh)</text>
+            <text x="205" y="66" fill="#facc15" font-size="10" font-weight="bold">Minyak (hₘ)</text>
+          </svg>`,
+
+        pipa_u_setimbang: `
+          <svg viewBox="0 0 320 150" class="w-full max-w-xs h-36">
+            <path d="M 95 25 L 95 110 A 45 45 0 0 0 185 110 L 185 25" fill="none" stroke="#64748b" stroke-width="22"/>
+            <path d="M 95 45 L 95 110 A 45 45 0 0 0 185 110 L 185 45" fill="none" stroke="#34d399" stroke-width="18"/>
+            <line x1="185" y1="45" x2="185" y2="85" stroke="#facc15" stroke-width="18"/>
+            <line x1="70" y1="45" x2="210" y2="45" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <text x="215" y="49" fill="#fbbf24" font-size="10" font-weight="bold">+15 cm (Sejajar)</text>
+            <line x1="70" y1="85" x2="210" y2="85" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <text x="215" y="89" fill="#94a3b8" font-size="10">Acuan Awal</text>
+          </svg>`,
+
+        dongkrak_hidrolik: `
+          <svg viewBox="0 0 340 150" class="w-full max-w-sm h-36">
+            <path d="M 70 65 L 110 65 L 110 115 L 195 115 L 195 65 L 275 65 L 275 135 L 70 135 Z" fill="rgba(56, 189, 248, 0.35)" stroke="#38bdf8" stroke-width="2"/>
+            <rect x="70" y="55" width="40" height="10" fill="#94a3b8"/>
+            <rect x="195" y="55" width="80" height="10" fill="#94a3b8"/>
+            <line x1="90" y1="22" x2="90" y2="50" stroke="#fbbf24" stroke-width="2.5"/>
+            <polygon points="86,50 90,57 94,50" fill="#fbbf24"/>
+            <text x="72" y="18" fill="#fbbf24" font-size="11" font-weight="bold">F₁ (A₁)</text>
+            <line x1="235" y1="52" x2="235" y2="24" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="231,24 235,17 239,24" fill="#34d399"/>
+            <text x="208" y="14" fill="#34d399" font-size="11" font-weight="bold">F₂ Beban (A₂)</text>
+          </svg>`,
+
+        archimedes_tenggelam: `
+          <svg viewBox="0 0 320 145" class="w-full max-w-xs h-36">
+            <rect x="90" y="35" width="120" height="95" fill="rgba(56, 189, 248, 0.3)"/>
+            <polyline points="90,20 90,130 210,130 210,20" fill="none" stroke="#94a3b8" stroke-width="3"/>
+            <rect x="130" y="65" width="40" height="40" rx="4" fill="#f59e0b" stroke="#fef3c7" stroke-width="1.5"/>
+            <line x1="150" y1="62" x2="150" y2="38" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="146,38 150,31 154,38" fill="#34d399"/>
+            <text x="158" y="45" fill="#34d399" font-size="11" font-weight="bold">F_A</text>
+          </svg>`,
+
+        archimedes_neraca: `
+          <svg viewBox="0 0 340 145" class="w-full max-w-sm h-36">
+            <line x1="85" y1="15" x2="85" y2="55" stroke="#94a3b8" stroke-width="2"/>
+            <rect x="68" y="55" width="34" height="34" rx="4" fill="#f59e0b"/>
+            <text x="48" y="108" fill="#e2e8f0" font-size="11" font-weight="bold">Udara: wᵤ = 50 N</text>
+            <rect x="205" y="48" width="90" height="75" fill="rgba(250, 204, 21, 0.3)" stroke="#64748b" stroke-width="2"/>
+            <line x1="250" y1="15" x2="250" y2="68" stroke="#94a3b8" stroke-width="2"/>
+            <rect x="233" y="68" width="34" height="34" rx="4" fill="#f59e0b"/>
+            <text x="195" y="138" fill="#facc15" font-size="11" font-weight="bold">Minyak: wₘ = 42 N</text>
+          </svg>`,
+
+        archimedes_terapung: `
+          <svg viewBox="0 0 320 145" class="w-full max-w-xs h-36">
+            <rect x="85" y="65" width="150" height="65" fill="rgba(56, 189, 248, 0.35)"/>
+            <polyline points="85,30 85,130 235,130 235,30" fill="none" stroke="#94a3b8" stroke-width="3"/>
+            <rect x="135" y="48" width="50" height="50" rx="6" fill="#d97706" stroke="#fde68a" stroke-width="2"/>
+            <line x1="85" y1="65" x2="235" y2="65" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 3"/>
+            <text x="195" y="57" fill="#fde68a" font-size="10" font-weight="bold">Muncul</text>
+            <text x="195" y="83" fill="#bae6fd" font-size="10" font-weight="bold">Tercelup</text>
+          </svg>`,
+
+        tumbukan_dua_benda: `
+          <svg viewBox="0 0 340 115" class="w-full max-w-sm h-28">
+            <line x1="20" y1="88" x2="320" y2="88" stroke="#64748b" stroke-width="2"/>
+            <rect x="55" y="48" width="44" height="38" rx="6" fill="#3b82f6" stroke="#93c5fd" stroke-width="2"/>
+            <text x="77" y="71" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">m₁</text>
+            <line x1="105" y1="67" x2="155" y2="67" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="155,63 163,67 155,71" fill="#34d399"/>
+            <text x="130" y="57" fill="#34d399" font-size="11" font-weight="bold">v₁ →</text>
+            <rect x="205" y="44" width="48" height="42" rx="6" fill="#a855f7" stroke="#d8b4fe" stroke-width="2"/>
+            <text x="229" y="69" fill="#ffffff" font-size="12" font-weight="bold" text-anchor="middle">m₂</text>
+            <text x="229" y="34" fill="#94a3b8" font-size="10" font-weight="bold" text-anchor="middle">v₂ = 0 (Diam)</text>
+          </svg>`,
+
+        pantulan_dinding: `
+          <svg viewBox="0 0 340 120" class="w-full max-w-sm h-28">
+            <rect x="275" y="18" width="16" height="84" fill="#475569" stroke="#94a3b8" stroke-width="2"/>
+            <circle cx="130" cy="44" r="14" fill="#38bdf8"/>
+            <line x1="152" y1="44" x2="230" y2="44" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="230,40 238,44 230,48" fill="#34d399"/>
+            <text x="175" y="34" fill="#34d399" font-size="11" font-weight="bold">v₁ (Datang)</text>
+            <circle cx="130" cy="82" r="14" fill="#fbbf24"/>
+            <line x1="230" y1="82" x2="155" y2="82" stroke="#f87171" stroke-width="2.5"/>
+            <polygon points="155,78 147,82 155,86" fill="#f87171"/>
+            <text x="165" y="102" fill="#f87171" font-size="11" font-weight="bold">v₂ (Pantul)</text>
+          </svg>`,
+
+        bola_memantul: `
+          <svg viewBox="0 0 320 135" class="w-full max-w-xs h-32">
+            <line x1="40" y1="115" x2="280" y2="115" stroke="#64748b" stroke-width="3"/>
+            <circle cx="115" cy="35" r="14" fill="#38bdf8"/>
+            <line x1="115" y1="54" x2="115" y2="96" stroke="#38bdf8" stroke-width="2.5"/>
+            <polygon points="111,96 115,104 119,96" fill="#38bdf8"/>
+            <text x="72" y="78" fill="#38bdf8" font-size="11" font-weight="bold">v₁ / h₁</text>
+            <circle cx="205" cy="52" r="14" fill="#34d399"/>
+            <line x1="205" y1="104" x2="205" y2="72" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="201,72 205,64 209,72" fill="#34d399"/>
+            <text x="218" y="88" fill="#34d399" font-size="11" font-weight="bold">v₂ / h₂</text>
+          </svg>`,
+
+        ayunan_balistik: `
+          <svg viewBox="0 0 340 135" class="w-full max-w-sm h-32">
+            <line x1="160" y1="10" x2="260" y2="10" stroke="#94a3b8" stroke-width="3"/>
+            <line x1="210" y1="10" x2="210" y2="62" stroke="#94a3b8" stroke-width="2"/>
+            <rect x="182" y="62" width="56" height="42" rx="4" fill="#b45309" stroke="#fde68a" stroke-width="2"/>
+            <text x="210" y="87" fill="#ffffff" font-size="11" font-weight="bold" text-anchor="middle">Balok</text>
+            <polygon points="85,79 102,79 108,83 102,87 85,87" fill="#fbbf24"/>
+            <line x1="115" y1="83" x2="168" y2="83" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="168,79 176,83 168,87" fill="#34d399"/>
+            <text x="115" y="72" fill="#fbbf24" font-size="11" font-weight="bold">Peluru (vₚ)</text>
+          </svg>`,
+
+        bidang_miring: `
+          <svg viewBox="0 0 340 135" class="w-full max-w-sm h-32">
+            <polygon points="55,112 275,112 275,32" fill="rgba(51, 65, 85, 0.45)" stroke="#64748b" stroke-width="2"/>
+            <rect x="85" y="84" width="24" height="20" rx="3" transform="rotate(-20 85 84)" fill="#38bdf8"/>
+            <line x1="115" y1="82" x2="168" y2="63" stroke="#34d399" stroke-width="2.5"/>
+            <polygon points="166,59 175,60 169,67" fill="#34d399"/>
+            <text x="282" y="78" fill="#fbbf24" font-size="11" font-weight="bold">h = 20 m</text>
+          </svg>`
+      };
+
+      return diagrams[type] || '';
+    }
 
     /* -----------------------------------------------------------
        2. AVATAR HEROES & APPLICATION STATE
@@ -1219,19 +1446,33 @@
       document.getElementById('quizQuestionNumber').innerText = `Tantangan #${currentUser.correctCount + 1} (Bank #${nextQ.id})`;
       document.getElementById('quizQuestionText').innerHTML = nextQ.question;
 
+      const diagContainer = document.getElementById('quizDiagramContainer');
+      const diagSVG = getPhysicsDiagramSVG(nextQ.diagram);
+      if (diagSVG) {
+        diagContainer.innerHTML = diagSVG;
+        diagContainer.classList.remove('hidden');
+      } else {
+        diagContainer.innerHTML = '';
+        diagContainer.classList.add('hidden');
+      }
+
+      const labels = ['A', 'B', 'C', 'D'];
+      const optList = document.getElementById('quizOptionsList');
+      optList.innerHTML = nextQ.options.map((opt, idx) => `
+        <button type="button" id="quizOpt-${idx}" onclick="selectQuizOption(${idx})" class="w-full text-left p-4 rounded-2xl border border-slate-800 bg-slate-950/80 hover:bg-slate-900 hover:border-slate-600 transition flex items-center space-x-3.5">
+          <span id="quizOptBadge-${idx}" class="w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-display font-bold text-xs text-slate-300 shrink-0">
+            ${labels[idx]}
+          </span>
+          <span class="text-sm sm:text-base font-medium text-slate-200">${opt}</span>
+        </button>
+      `).join('');
+
       const toast = document.getElementById('quizFeedbackToast');
       toast.classList.add('hidden');
 
-      const labels = ['A', 'B', 'C', 'D'];
-      const optionsContainer = document.getElementById('quizOptionsList');
-      optionsContainer.innerHTML = nextQ.options.map((opt, idx) => `
-        <button type="button" id="optCard-${idx}" onclick="selectQuizOption(${idx})" class="w-full text-left p-4 rounded-2xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 transition flex items-center space-x-3.5 group">
-          <span id="optBadge-${idx}" class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 font-bold text-xs flex items-center justify-center text-slate-300 group-hover:border-indigo-400">
-            ${labels[idx]}
-          </span>
-          <span class="text-sm text-slate-200 font-medium">${opt}</span>
-        </button>
-      `).join('');
+      const submitBtn = document.getElementById('btnSubmitAnswer');
+      submitBtn.disabled = false;
+      submitBtn.classList.remove('opacity-50', 'pointer-events-none');
 
       triggerMathJax(document.getElementById('viewQuiz'));
       startQuestionTimer();
@@ -1240,32 +1481,43 @@
     function selectQuizOption(idx) {
       selectedOptionIdx = idx;
       [0, 1, 2, 3].forEach(i => {
-        const card = document.getElementById(`optCard-${i}`);
-        const badge = document.getElementById(`optBadge-${i}`);
-        if (!card) return;
+        const btn = document.getElementById(`quizOpt-${i}`);
+        const badge = document.getElementById(`quizOptBadge-${i}`);
+        if (!btn || !badge) return;
+
         if (i === idx) {
-          card.className = "w-full text-left p-4 rounded-2xl bg-indigo-950/60 border-2 border-indigo-500 transition flex items-center space-x-3.5 shadow-lg";
-          badge.className = "w-8 h-8 rounded-xl bg-indigo-600 font-bold text-xs flex items-center justify-center text-white";
+          btn.className = "w-full text-left p-4 rounded-2xl border-2 border-indigo-500 bg-indigo-950/50 transition flex items-center space-x-3.5 shadow-lg shadow-indigo-500/10";
+          badge.className = "w-8 h-8 rounded-xl bg-indigo-600 border border-indigo-400 flex items-center justify-center font-display font-bold text-xs text-white shrink-0";
         } else {
-          card.className = "w-full text-left p-4 rounded-2xl bg-slate-950/90 hover:bg-slate-900 border border-slate-800 transition flex items-center space-x-3.5 opacity-75";
-          badge.className = "w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 font-bold text-xs flex items-center justify-center text-slate-300";
+          btn.className = "w-full text-left p-4 rounded-2xl border border-slate-800 bg-slate-950/80 hover:bg-slate-900 transition flex items-center space-x-3.5 opacity-75";
+          badge.className = "w-8 h-8 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center font-display font-bold text-xs text-slate-300 shrink-0";
         }
       });
     }
 
     function handleAnswerSubmission() {
-      if (selectedOptionIdx === null || !currentQuestion || !currentUser) return;
+      if (!currentQuestion || !currentUser || currentUser.status !== 'PLAYING') return;
+
+      const toast = document.getElementById('quizFeedbackToast');
+      if (selectedOptionIdx === null) {
+        toast.className = "w-full sm:w-auto px-4 py-2.5 rounded-xl text-xs font-extrabold flex items-center space-x-2 bg-amber-500/20 text-amber-300 border border-amber-500/40";
+        toast.innerHTML = `<i class="fa-solid fa-circle-info"></i><span>Pilih salah satu jawaban A, B, C, atau D terlebih dahulu!</span>`;
+        toast.classList.remove('hidden');
+        return;
+      }
 
       clearInterval(quizTimerInterval);
-      const isCorrect = selectedOptionIdx === currentQuestion.answer;
+      const submitBtn = document.getElementById('btnSubmitAnswer');
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-50', 'pointer-events-none');
 
+      const isCorrect = selectedOptionIdx === currentQuestion.answer;
       studentHistory.push({
         question: currentQuestion,
-        chosenIdx: selectedOptionIdx,
+        chosenIndex: selectedOptionIdx,
         isCorrect: isCorrect
       });
 
-      const toast = document.getElementById('quizFeedbackToast');
       toast.classList.remove('hidden');
 
       if (isCorrect) {
@@ -1969,13 +2221,16 @@
 
       const labels = ['A', 'B', 'C', 'D'];
       const container = document.getElementById('questionBankContainer');
-      container.innerHTML = list.map(q => `
-        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 space-y-2">
+      container.innerHTML = list.map(q => {
+        const diagSVG = getPhysicsDiagramSVG(q.diagram);
+        return `
+        <div class="bg-slate-950/90 border border-slate-800 rounded-2xl p-4 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="font-mono font-bold text-amber-400">Soal #${q.id}</span>
             <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold">${q.category}</span>
           </div>
           <p class="text-slate-200 leading-relaxed">${q.question}</p>
+          ${diagSVG ? `<div class="bg-slate-900/90 border border-slate-800 rounded-xl p-2 flex justify-center">${diagSVG}</div>` : ''}
           <div class="flex flex-wrap gap-2">
             ${q.options.map((opt, i) => `
               <span class="px-2.5 py-1 rounded-lg border ${i === q.answer ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300 font-bold' : 'bg-slate-900 border-slate-800 text-slate-400'}">
@@ -1987,7 +2242,7 @@
             <strong>Pembahasan:</strong> ${q.explanation}
           </div>
         </div>
-      `).join('');
+      `}).join('');
 
       triggerMathJax(container);
     }
