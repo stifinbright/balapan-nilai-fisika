@@ -1169,10 +1169,19 @@
     let cloudStudentsCache = {};
     let cloudMetaCache = {};
     let cloudPollInterval = null;
+    let currentUser = null;
+    let currentQuestion = null;
+    let selectedOptionIndex = null;
+    let quizTimerSec = 180;
     let quizTimerInterval = null;
     let usedQuestionIds = [];
     let studentHistory = [];
     let lastViolationTimestamp = 0;
+
+    function calculateNilaiAkhir(score) {
+      const raw = (Number(score || 0) / 30) * 100;
+      return Math.max(0, Number(raw.toFixed(2)));
+    }
 
     // Teacher & Canvas Runtime State
     let isTeacherAuthenticated = false;
@@ -1345,45 +1354,6 @@
       if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise(el ? [el] : undefined).catch(() => {});
       }
-    }
-
-    /* -----------------------------------------------------------
-       4. ROOM STORAGE LAYER (ISOLATED PER ROOM CODE)
-       ----------------------------------------------------------- */
-    function getRoomStorageKey(room) {
-      return `altar_ilmu_room_${room.toUpperCase()}`;
-    }
-
-    function getRoomMetaKey(room) {
-      return `altar_ilmu_meta_${room.toUpperCase()}`;
-    }
-
-    function getRoomStudents(room) {
-      try {
-        const raw = localStorage.getItem(getRoomStorageKey(room));
-        return raw ? JSON.parse(raw) : {};
-      } catch (e) {
-        return {};
-      }
-    }
-
-    function saveStudentRecord(room, studentObj) {
-      const data = getRoomStudents(room);
-      data[studentObj.id] = studentObj;
-      localStorage.setItem(getRoomStorageKey(room), JSON.stringify(data));
-    }
-
-    function getRoomGlobalState(room) {
-      try {
-        const raw = localStorage.getItem(getRoomMetaKey(room));
-        return raw ? JSON.parse(raw) : { endedGlobally: false };
-      } catch (e) {
-        return { endedGlobally: false };
-      }
-    }
-
-    function setRoomGlobalState(room, metaObj) {
-      localStorage.setItem(getRoomMetaKey(room), JSON.stringify(metaObj));
     }
 
     /* -----------------------------------------------------------
