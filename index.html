@@ -432,6 +432,10 @@
             <h3 class="font-display font-bold text-base sm:text-lg text-white">Arena Visual Altar Ilmu (2D Live)</h3>
           </div>
           <div class="flex items-center space-x-4 text-xs text-slate-400">
+            <span id="cloudSyncIndicator" class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span>Firebase Live Sync</span>
+            </span>
             <span>Ruang: <strong id="canvasRoomBadge" class="text-amber-400 font-mono">FISIKA11</strong></span>
             <span>Peserta: <strong id="canvasActiveCounter" class="text-emerald-400">0 Siswa</strong></span>
           </div>
@@ -1154,17 +1158,17 @@
     ];
 
     const TEACHER_PIN = "9urulabs0K";
+    const FIREBASE_DB_URL = "https://tambah-nilai-fisika-default-rtdb.asia-southeast1.firebasedatabase.app";
 
     let selectedAvatar = HERO_AVATARS[0];
     let currentRoomCode = "FISIKA11";
     let audioEnabled = true;
     let audioCtx = null;
 
-    // Student Runtime State
-    let currentUser = null;
-    let currentQuestion = null;
-    let selectedOptionIdx = null;
-    let quizTimerSec = 180;
+    // Cloud Sync Cache & Polling
+    let cloudStudentsCache = {};
+    let cloudMetaCache = {};
+    let cloudPollInterval = null;
     let quizTimerInterval = null;
     let usedQuestionIds = [];
     let studentHistory = [];
@@ -1180,12 +1184,110 @@
     let visualPositions = {}; // Smooth lerp tracker per student id
 
     /* -----------------------------------------------------------
-       3. CORE UTILITY & GRADE CALCULATION (0 - 100)
+       4. FIREBASE CLOUD & LOCAL FALLBACK STORAGE LAYER
        ----------------------------------------------------------- */
-    function calculateNilaiAkhir(score) {
-      const numericScore = Number(score) || 0;
-      const grade = (numericScore / 30) * 100;
-      return Number(Math.max(0, grade).toFixed(2));
+    function sanitizeFirebaseKey(key) {
+      return String(key || 'FISIKA11').toUpperCase().replace(/[.#$\[\]\/]/g, '_');
+    }
+
+    function getRoomStorageKey(room) {
+      return `altar_ilmu_room_${sanitizeFirebaseKey(room)}`;
+    }
+
+    function getRoomMetaKey(room) {
+      return `altar_ilmu_meta_${sanitizeFirebaseKey(room)}`;
+    }
+
+    function getRoomStudents(room) {
+      const cleanRoom = sanitizeFirebaseKey(room);
+      if (cloudStudentsCache[cleanRoom]) {
+        return cloudStudentsCache[cleanRoom];
+      }
+      try {
+        const raw = localStorage.getItem(getRoomStorageKey(cleanRoom));
+        return raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        return {};
+      }
+    }
+
+    async function syncRoomFromCloud(room) {
+      const cleanRoom = sanitizeFirebaseKey(room);
+      try {
+        const res = await fetch(`${FIREBASE_DB_URL}/rooms/${cleanRoom}.json`);
+        if (!res.ok) throw new Error('Network error');
+        const payload = await res.json();
+
+        const students = (payload && payload.students) ? payload.students : {};
+        const meta = (payload && payload.meta) ? payload.meta : { endedGlobally: false };
+
+        cloudStudentsCache[cleanRoom] = students;
+        cloudMetaCache[cleanRoom] = meta;
+
+        localStorage.setItem(getRoomStorageKey(cleanRoom), JSON.stringify(students));
+        localStorage.setItem(getRoomMetaKey(cleanRoom), JSON.stringify(meta));
+
+        const badge = document.getElementById('cloudSyncIndicator');
+        if (badge) {
+          badge.className = "inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-semibold";
+          badge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span>Firebase Live Sync</span>`;
+        }
+      } catch (err) {
+        const badge = document.getElementById('cloudSyncIndicator');
+        if (badge) {
+          badge.className = "inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-300 border border-amber-500/30 font-semibold";
+          badge.innerHTML = `<i class="fa-solid fa-wifi text-[10px]"></i><span>Mode Lokal</span>`;
+        }
+      }
+    }
+
+    function saveStudentRecord(room, studentObj) {
+      const cleanRoom = sanitizeFirebaseKey(room);
+      if (!cloudStudentsCache[cleanRoom]) {
+        cloudStudentsCache[cleanRoom] = getRoomStudents(cleanRoom);
+      }
+      cloudStudentsCache[cleanRoom][studentObj.id] = studentObj;
+      localStorage.setItem(getRoomStorageKey(cleanRoom), JSON.stringify(cloudStudentsCache[cleanRoom]));
+
+      // Push directly to Firebase Realtime Database
+      fetch(`${FIREBASE_DB_URL}/rooms/${cleanRoom}/students/${studentObj.id}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentObj)
+      }).catch(() => {});
+    }
+
+    function getRoomGlobalState(room) {
+      const cleanRoom = sanitizeFirebaseKey(room);
+      if (cloudMetaCache[cleanRoom]) {
+        return cloudMetaCache[cleanRoom];
+      }
+      try {
+        const raw = localStorage.getItem(getRoomMetaKey(cleanRoom));
+        return raw ? JSON.parse(raw) : { endedGlobally: false };
+      } catch (e) {
+        return { endedGlobally: false };
+      }
+    }
+
+    function setRoomGlobalState(room, metaObj) {
+      const cleanRoom = sanitizeFirebaseKey(room);
+      cloudMetaCache[cleanRoom] = metaObj;
+      localStorage.setItem(getRoomMetaKey(cleanRoom), JSON.stringify(metaObj));
+
+      fetch(`${FIREBASE_DB_URL}/rooms/${cleanRoom}/meta.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(metaObj)
+      }).catch(() => {});
+    }
+
+    function startCloudPolling(room) {
+      clearInterval(cloudPollInterval);
+      syncRoomFromCloud(room);
+      cloudPollInterval = setInterval(() => {
+        syncRoomFromCloud(room);
+      }, 1500);
     }
 
     function playSound(type) {
@@ -1330,6 +1432,7 @@
     function returnToLobby() {
       clearInterval(quizTimerInterval);
       clearInterval(syncInterval);
+      clearInterval(cloudPollInterval);
       currentUser = null;
       switchMainView('viewLobby');
     }
@@ -1337,7 +1440,7 @@
     /* -----------------------------------------------------------
        6. STUDENT GAMEPLAY & ANTI-CHEAT ENFORCEMENT
        ----------------------------------------------------------- */
-    function startStudentMatch(e) {
+    async function startStudentMatch(e) {
       e.preventDefault();
       const name = document.getElementById('inputStudentName').value.trim();
       const absen = parseInt(document.getElementById('inputStudentAbsen').value, 10) || 1;
@@ -1345,7 +1448,8 @@
 
       if (!name) return;
 
-      // Reset global room end flag if starting fresh with empty room
+      // Sync latest room state from Firebase before joining
+      await syncRoomFromCloud(room);
       const existing = getRoomStudents(room);
       if (Object.keys(existing).length === 0) {
         setRoomGlobalState(room, { endedGlobally: false });
@@ -1383,8 +1487,8 @@
 
       switchMainView('viewQuiz');
       loadNextQuestion();
-
-      // Poll room status (in case teacher stops individual or global match)
+      // Poll room status & sync with Firebase Realtime Database
+      startCloudPolling(currentRoomCode);
       clearInterval(syncInterval);
       syncInterval = setInterval(checkTeacherOverridesForStudent, 1200);
     }
@@ -1780,6 +1884,7 @@
       document.getElementById('teacherRoomInput').value = currentRoomCode;
       document.getElementById('canvasRoomBadge').innerText = currentRoomCode;
       resizeArenaCanvas();
+      startCloudPolling(currentRoomCode);
       refreshTeacherDashboard();
 
       clearInterval(syncInterval);
@@ -1793,6 +1898,7 @@
       document.getElementById('inputRoomCode').value = currentRoomCode;
       document.getElementById('canvasRoomBadge').innerText = currentRoomCode;
       visualPositions = {};
+      startCloudPolling(currentRoomCode);
       refreshTeacherDashboard();
     }
 
@@ -1861,8 +1967,18 @@
     }
 
     function resetCurrentRoom() {
-      localStorage.removeItem(getRoomStorageKey(currentRoomCode));
-      setRoomGlobalState(currentRoomCode, { endedGlobally: false });
+      const cleanRoom = sanitizeFirebaseKey(currentRoomCode);
+      delete cloudStudentsCache[cleanRoom];
+      cloudMetaCache[cleanRoom] = { endedGlobally: false };
+      localStorage.removeItem(getRoomStorageKey(cleanRoom));
+      setRoomGlobalState(cleanRoom, { endedGlobally: false });
+
+      fetch(`${FIREBASE_DB_URL}/rooms/${cleanRoom}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ students: null, meta: { endedGlobally: false } })
+      }).catch(() => {});
+
       visualPositions = {};
       canvasParticles = [];
       if (botInterval) {
